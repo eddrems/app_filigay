@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Actualizar perfil — Escuela ZAO</title>
+    <title>Actualizar acceso — Escuela ZAO</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -16,31 +16,57 @@
     <main class="w-full max-w-lg rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-8 shadow-card-hover">
       <div class="mb-8 text-center">
         <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-          <span class="material-symbols-outlined filled text-2xl text-on-primary">manage_accounts</span>
+          <span class="material-symbols-outlined filled text-2xl text-on-primary">lock_reset</span>
         </div>
-        <h1 class="text-headline-md font-bold text-primary">Actualiza tu perfil</h1>
-        <p class="mt-2 text-body-md text-on-surface-variant">Por seguridad, confirma tu correo y teléfono antes de continuar.</p>
+        <h1 class="text-headline-md font-bold text-primary">Define tu nueva contraseña</h1>
+        <p class="mt-2 text-body-md text-on-surface-variant">
+          Por seguridad debes cambiar la clave inicial. Tu primera contraseña era tu número de teléfono.
+        </p>
       </div>
 
       <form @submit.prevent="submit" class="space-y-5">
-        <p x-show="error" x-text="error" class="rounded-lg bg-error-container px-4 py-3 text-sm text-error"></p>
-        <p x-show="success" x-text="success" class="rounded-lg bg-tertiary-fixed/30 px-4 py-3 text-sm text-tertiary-container"></p>
+        <template x-if="error">
+          <p x-text="error" class="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm font-medium text-on-error-container" role="alert"></p>
+        </template>
+        <template x-if="success">
+          <p x-text="success" class="rounded-lg border border-tertiary-container/30 bg-tertiary-fixed/40 px-4 py-3 text-sm font-medium text-tertiary-container" role="status"></p>
+        </template>
+
+        <div class="rounded-lg border border-primary/20 bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
+          Confirma tus datos y elige una contraseña personal (mínimo 6 caracteres).
+        </div>
 
         <div>
-          <label class="mb-1.5 block text-label-md" for="email">Correo electrónico</label>
-          <input id="email" type="email" x-model="email" required class="w-full rounded-lg border border-outline-variant px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20" />
+          <label class="mb-1.5 block text-label-md text-on-surface" for="email">Correo electrónico</label>
+          <input id="email" type="email" x-model="email" required autocomplete="email" class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20" />
         </div>
         <div>
-          <label class="mb-1.5 block text-label-md" for="phone">Teléfono (clave de acceso)</label>
-          <input id="phone" type="tel" x-model="phone" required class="w-full rounded-lg border border-outline-variant px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20" />
+          <label class="mb-1.5 block text-label-md text-on-surface" for="phone">Teléfono</label>
+          <input id="phone" type="tel" x-model="phone" required autocomplete="tel" class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20" />
         </div>
 
-        <button type="submit" :disabled="loading" class="w-full rounded-lg bg-secondary-container py-4 font-label-md text-on-secondary-container hover:brightness-105 disabled:opacity-60">
-          <span x-text="loading ? 'Guardando…' : 'Guardar y continuar'"></span>
+        <hr class="border-outline-variant/40" />
+
+        <div>
+          <label class="mb-1.5 block text-label-md text-on-surface" for="new-password">Nueva contraseña</label>
+          <input id="new-password" type="password" x-model="newPassword" required minlength="6" autocomplete="new-password" class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-label-md text-on-surface" for="confirm-password">Confirmar contraseña</label>
+          <input id="confirm-password" type="password" x-model="confirmPassword" required minlength="6" autocomplete="new-password" class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20" />
+        </div>
+
+        <button
+          type="submit"
+          :disabled="loading || !ready"
+          class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 text-sm font-semibold text-on-primary shadow-sm transition hover:bg-primary-container disabled:opacity-60"
+        >
+          <span x-text="loading ? 'Guardando…' : 'Guardar y entrar al portal'">Guardar y entrar al portal</span>
+          <span class="material-symbols-outlined text-lg" x-show="!loading">arrow_forward</span>
         </button>
       </form>
     </main>
 
-    <script type="module" src="js/profile-update.js"></script>
+    <script type="module" src="js/init-actualizar-perfil.js"></script>
   </body>
 </html>

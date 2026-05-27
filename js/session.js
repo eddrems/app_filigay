@@ -19,11 +19,19 @@ export function getDemoSession() {
 }
 
 export function setDemoSession(payload) {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    /* Safari modo privado u otras restricciones */
+  }
 }
 
 export function clearDemoSession() {
-  sessionStorage.removeItem(STORAGE_KEY);
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
 }
 
 function mapSupabaseSession(user, profile) {
@@ -76,7 +84,7 @@ export function loginDemo(email, password) {
     role: account.role,
     phone: account.phone,
     studentId: account.studentId || null,
-    needsProfileUpdate: false,
+    needsProfileUpdate: account.needsProfileUpdate === true,
   };
   setDemoSession(payload);
   return payload;

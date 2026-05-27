@@ -1,4 +1,5 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+/** +esm = bundle para navegador (dist/module usa imports "@supabase/auth-js" que el browser no resuelve) */
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/+esm';
 import { supabaseConfig } from './load-config.js';
 
 let client = null;

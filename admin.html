@@ -58,94 +58,176 @@
       </aside>
 
       <main class="lg:ml-72">
-        <div class="mx-auto max-w-container-max px-4 pb-16 pt-24 md:px-gutter" x-data="{ tab: 'alumnos' }">
+        <div
+          class="mx-auto max-w-container-max px-4 pb-16 pt-24 md:px-gutter"
+          x-data="{
+            tab: 'alumnos',
+            pageTitle() {
+              return {
+                alumnos: 'Gestión de alumnos',
+                usuarios: 'Usuarios del sistema',
+                cursos: 'Oferta académica',
+                solicitudes: 'Solicitudes de matrícula',
+                carga: 'Carga masiva',
+              }[this.tab] || 'Administración';
+            },
+            pageDesc() {
+              return {
+                alumnos: 'Registros, matrículas y expedientes académicos.',
+                usuarios: 'Crear cuentas de administrador y docente.',
+                cursos: 'Gestiona cursos, precios, portada y docente asignado.',
+                solicitudes: 'Aprueba o rechaza solicitudes de estudiantes para matricularse en cursos.',
+                carga: 'Importación masiva de estudiantes.',
+              }[this.tab] || '';
+            },
+          }"
+        >
           <div class="mb-8">
-            <h1 class="text-headline-lg font-bold text-primary" x-text="tab === 'usuarios' ? 'Usuarios del sistema' : 'Gestión de alumnos'"></h1>
-            <p class="mt-2 text-body-md text-on-surface-variant" x-text="tab === 'usuarios' ? 'Crear cuentas de administrador y docente con acceso al portal.' : 'Registros, matrículas y expedientes académicos.'"></p>
+            <h1 class="text-headline-lg font-bold text-primary" x-text="pageTitle()"></h1>
+            <p class="mt-2 text-body-md text-on-surface-variant" x-text="pageDesc()"></p>
           </div>
 
           <div class="mb-8 flex gap-1 overflow-x-auto border-b border-outline-variant">
             <button @click="tab = 'alumnos'" :class="tab === 'alumnos' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-6 py-3 font-label-md transition" type="button">Alumnos</button>
-            <button @click="tab = 'usuarios'" :class="tab === 'usuarios' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-6 py-3 font-label-md transition" type="button">Usuarios admin / docente</button>
-            <button @click="tab = 'matricula'" :class="tab === 'matricula' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-6 py-3 font-label-md transition" type="button">Matrícula masiva</button>
+            <button @click="tab = 'usuarios'" :class="tab === 'usuarios' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-6 py-3 font-label-md transition" type="button">Usuarios</button>
+            <button @click="tab = 'cursos'" :class="tab === 'cursos' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-6 py-3 font-label-md transition" type="button">Oferta académica</button>
+            <button @click="tab = 'solicitudes'" :class="tab === 'solicitudes' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-6 py-3 font-label-md transition" type="button">Solicitudes de matrícula</button>
             <button @click="tab = 'carga'" :class="tab === 'carga' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-6 py-3 font-label-md transition" type="button">Carga masiva</button>
           </div>
 
-          <div x-show="tab === 'alumnos'" class="space-y-6">
-            <div class="zao-card flex flex-col gap-4 p-6 xl:flex-row xl:items-center xl:justify-between">
+          <div x-show="tab === 'alumnos'" x-data="studentsManager()" x-init="initStudents()" class="space-y-6">
+            <p x-show="error" x-text="error" class="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm text-error"></p>
+            <p x-show="success" x-text="success" class="rounded-lg border border-tertiary-container/30 bg-tertiary-fixed/20 px-4 py-3 text-sm text-tertiary-container"></p>
+            <p x-show="demoMode" class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900">
+              Ejecuta <code class="rounded bg-white/80 px-1">supabase/06-students-enrollments.sql</code>
+            </p>
+
+            <div class="zao-card flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
               <div class="relative flex-1 sm:max-w-md">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
-                <input type="search" placeholder="Buscar por nombre, correo…" class="w-full rounded-lg border border-outline-variant bg-surface py-2.5 pl-10 pr-4 text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                <input type="search" x-model="search" placeholder="Buscar por nombre, correo o código…" class="w-full rounded-lg border border-outline-variant bg-surface py-2.5 pl-10 pr-4 text-body-md focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
               </div>
               <div class="flex flex-wrap gap-2">
-                <select class="rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm"><option>Rol (todos)</option><option>Estudiante</option><option>Líder</option></select>
-                <select class="rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm"><option>Área (todas)</option><option>Teología</option><option>Liderazgo</option></select>
-                <select class="rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm"><option>Ministerio (todos)</option></select>
-                <button type="button" class="inline-flex items-center gap-2 rounded-lg border border-outline-variant px-4 py-2 font-label-md text-primary hover:bg-surface-container">
-                  <span class="material-symbols-outlined text-xl">category</span>
-                  Categorías
+                <button type="button" @click="openCreate()" class="inline-flex items-center gap-2 rounded-lg bg-secondary-container px-4 py-2.5 font-label-md text-on-secondary-container hover:brightness-105">
+                  <span class="material-symbols-outlined text-xl">person_add</span>
+                  Nuevo estudiante
+                </button>
+                <button type="button" @click="reload()" :disabled="loading" class="inline-flex items-center gap-2 rounded-lg border border-outline-variant px-4 py-2.5 font-label-md text-primary hover:bg-surface-container disabled:opacity-50">
+                  <span class="material-symbols-outlined text-xl" :class="loading && 'animate-spin'">refresh</span>
                 </button>
               </div>
             </div>
 
+            <div x-show="showCreate" class="zao-card p-6">
+              <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-headline-md font-semibold text-primary">Registrar estudiante</h2>
+                <button type="button" @click="closePanels()" class="text-label-sm text-primary hover:underline">Cerrar</button>
+              </div>
+              <p class="mb-4 text-body-md text-on-surface-variant">
+                La <strong>clave inicial será su teléfono</strong> (mín. 6 caracteres). En el primer ingreso deberá definir una contraseña nueva.
+              </p>
+              <form @submit.prevent="submitCreate" class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="mb-1.5 block text-label-md">Nombre completo</label>
+                  <input type="text" x-model="form.fullName" required class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-label-md">Correo (login)</label>
+                  <input type="email" x-model="form.email" required class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="mb-1.5 block text-label-md">Teléfono (será la clave inicial)</label>
+                  <input type="tel" x-model="form.phone" required minlength="6" placeholder="Ej. 3001234567" class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="mb-1.5 block text-label-md">Código estudiante (opcional)</label>
+                  <input type="text" x-model="form.studentId" placeholder="Auto: ZAO-2026-001" class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div class="md:col-span-2">
+                  <button type="submit" :disabled="submitting || demoMode" class="rounded-lg bg-primary px-6 py-3 font-label-md text-on-primary hover:bg-primary-container disabled:opacity-60">
+                    <span x-text="submitting ? 'Guardando…' : 'Crear estudiante'"></span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div x-show="showEnroll && selectedStudent" class="zao-card p-6">
+              <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 class="text-headline-md font-semibold text-primary">Matricular cursos</h2>
+                  <p class="mt-1 text-body-md text-on-surface-variant">
+                    <span x-text="selectedStudent?.full_name"></span>
+                    · <span x-text="selectedStudent?.student_id"></span>
+                  </p>
+                </div>
+                <button type="button" @click="closePanels()" class="text-label-sm text-primary hover:underline">Cerrar</button>
+              </div>
+              <p class="mb-4 text-label-sm text-on-surface-variant">Selecciona uno o varios cursos de la oferta académica.</p>
+              <div x-show="courses.length === 0" class="py-6 text-center text-on-surface-variant">No hay cursos activos. Crea cursos en Oferta académica.</div>
+              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <template x-for="course in courses" :key="course.id">
+                  <label class="flex cursor-pointer gap-3 rounded-xl border p-4 transition" :class="isCourseSelected(course.id) ? 'border-primary bg-surface-container' : 'border-outline-variant hover:bg-surface-container-low'">
+                    <input type="checkbox" class="mt-1 rounded border-outline-variant text-primary focus:ring-primary" :checked="isCourseSelected(course.id)" @change="toggleCourse(course.id)" />
+                    <div class="min-w-0 flex-1">
+                      <p class="font-semibold text-on-surface" x-text="course.title"></p>
+                      <p class="text-sm font-bold text-primary" x-text="formatPrice(course.price)"></p>
+                    </div>
+                  </label>
+                </template>
+              </div>
+              <button type="button" @click="saveEnrollments()" :disabled="enrolling || demoMode" class="mt-6 rounded-lg bg-secondary-container px-8 py-3 font-label-md text-on-secondary-container hover:brightness-105 disabled:opacity-60">
+                <span x-text="enrolling ? 'Guardando…' : 'Guardar matrícula'"></span>
+              </button>
+            </div>
+
             <div class="zao-card overflow-hidden">
-              <div class="overflow-x-auto">
+              <div x-show="loading" class="p-10 text-center text-on-surface-variant">Cargando estudiantes…</div>
+              <div x-show="!loading && filteredStudents.length === 0" class="p-10 text-center text-on-surface-variant">No hay estudiantes registrados.</div>
+              <div x-show="!loading && filteredStudents.length > 0" class="overflow-x-auto">
                 <table class="min-w-[900px] w-full text-left">
                   <thead>
                     <tr class="border-b border-outline-variant/50 bg-surface-container-low">
-                      <th class="p-4 text-label-md text-primary">Alumno</th>
-                      <th class="p-4 text-label-md text-primary">Matrícula</th>
+                      <th class="p-4 text-label-md text-primary">Estudiante</th>
+                      <th class="p-4 text-label-md text-primary">Cursos</th>
                       <th class="p-4 text-label-md text-primary">Contacto</th>
-                      <th class="p-4 text-label-md text-primary">Rol</th>
                       <th class="p-4 text-right text-label-md text-primary">Acciones</th>
                     </tr>
                   </thead>
                   <tbody class="text-body-md">
-                    <tr class="border-b border-outline-variant/30 transition hover:bg-slate-50">
-                      <td class="p-4">
-                        <div class="flex items-center gap-3">
-                          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-fixed-dim font-bold text-primary">MR</div>
-                          <div><p class="font-semibold">Mateo Ramírez</p><p class="text-sm text-on-surface-variant">ZAO-2023-041</p></div>
-                        </div>
-                      </td>
-                      <td class="p-4"><span class="zao-badge-success"><span class="material-symbols-outlined text-sm">check_circle</span> Matriculado</span></td>
-                      <td class="p-4"><p>mateo.r@zao.edu</p><p class="text-sm text-on-surface-variant">+57 300 111 2233</p></td>
-                      <td class="p-4 text-on-surface-variant">Estudiante nuevo</td>
-                      <td class="p-4 text-right"><button type="button" class="rounded-lg border border-outline-variant bg-white px-4 py-2 font-label-md text-primary hover:bg-surface-container">Expediente</button></td>
-                    </tr>
-                    <tr class="border-b border-outline-variant/30 transition hover:bg-slate-50">
-                      <td class="p-4">
-                        <div class="flex items-center gap-3">
-                          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-fixed font-bold text-secondary">SG</div>
-                          <div><p class="font-semibold">Sofía Gómez</p><p class="text-sm text-on-surface-variant">ZAO-2022-105</p></div>
-                        </div>
-                      </td>
-                      <td class="p-4"><span class="zao-badge-pending"><span class="material-symbols-outlined text-sm">pending</span> Pendiente</span></td>
-                      <td class="p-4"><p>sofia.g@zao.edu</p><p class="text-sm text-on-surface-variant">+57 310 222 3344</p></td>
-                      <td class="p-4 text-on-surface-variant">Líder célula</td>
-                      <td class="p-4 text-right"><button type="button" class="rounded-lg border border-outline-variant bg-white px-4 py-2 font-label-md text-primary hover:bg-surface-container">Expediente</button></td>
-                    </tr>
-                    <tr class="transition hover:bg-slate-50">
-                      <td class="p-4">
-                        <div class="flex items-center gap-3">
-                          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-tertiary-container font-bold text-on-tertiary">CT</div>
-                          <div><p class="font-semibold">Carmen Torres</p><p class="text-sm text-on-surface-variant">ZAO-2021-012</p></div>
-                        </div>
-                      </td>
-                      <td class="p-4"><span class="zao-badge-neutral"><span class="material-symbols-outlined text-sm">history_edu</span> Completado</span></td>
-                      <td class="p-4"><p>c.torres@zao.edu</p><p class="text-sm text-on-surface-variant">+57 320 333 4455</p></td>
-                      <td class="p-4 text-on-surface-variant">Mentor</td>
-                      <td class="p-4 text-right"><button type="button" class="rounded-lg border border-outline-variant bg-white px-4 py-2 font-label-md text-primary hover:bg-surface-container">Expediente</button></td>
-                    </tr>
+                    <template x-for="student in filteredStudents" :key="student.id">
+                      <tr class="border-b border-outline-variant/30 transition hover:bg-slate-50/80">
+                        <td class="p-4">
+                          <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-fixed-dim text-sm font-bold text-primary" x-text="studentInitials(student.full_name)"></div>
+                            <div>
+                              <p class="font-semibold" x-text="student.full_name"></p>
+                              <p class="text-sm text-on-surface-variant" x-text="student.student_id || '—'"></p>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="p-4">
+                          <span class="zao-badge-success" x-show="courseCount(student.id) > 0">
+                            <span class="material-symbols-outlined text-sm">school</span>
+                            <span x-text="courseCount(student.id) + ' curso(s)'"></span>
+                          </span>
+                          <span class="zao-badge-pending" x-show="courseCount(student.id) === 0">Sin matricular</span>
+                        </td>
+                        <td class="p-4">
+                          <p x-text="student.email"></p>
+                          <p class="text-sm text-on-surface-variant" x-text="student.phone"></p>
+                        </td>
+                        <td class="p-4 text-right">
+                          <button type="button" @click="openEnroll(student)" class="rounded-lg border border-outline-variant bg-white px-4 py-2 font-label-md text-primary hover:bg-surface-container">
+                            Matricular
+                          </button>
+                        </td>
+                      </tr>
+                    </template>
                   </tbody>
                 </table>
               </div>
-              <div class="flex items-center justify-between border-t border-outline-variant/30 p-4 text-sm text-on-surface-variant">
-                <span>Mostrando 1–3 de 142 alumnos</span>
-                <div class="flex gap-1">
-                  <button class="flex h-8 w-8 items-center justify-center rounded bg-primary font-bold text-on-primary">1</button>
-                  <button class="flex h-8 w-8 items-center justify-center rounded hover:bg-surface-container">2</button>
-                </div>
+              <div x-show="!loading && filteredStudents.length > 0" class="border-t border-outline-variant/30 p-4 text-sm text-on-surface-variant">
+                <span x-text="'Mostrando ' + filteredStudents.length + ' estudiante(s)'"></span>
               </div>
             </div>
           </div>
@@ -242,16 +324,207 @@
             </section>
           </div>
 
-          <div x-show="tab === 'matricula'" class="zao-card p-8 text-center">
-            <span class="material-symbols-outlined mb-4 text-5xl text-primary-container">groups</span>
-            <h2 class="text-headline-md font-semibold text-primary">Matrícula masiva</h2>
-            <p class="mt-2 text-body-md text-on-surface-variant">Selecciona año, semestre y curso para inscribir grupos.</p>
-            <div class="mx-auto mt-6 grid max-w-lg gap-4 sm:grid-cols-3">
-              <select class="rounded-lg border border-outline-variant px-3 py-2"><option>2025</option></select>
-              <select class="rounded-lg border border-outline-variant px-3 py-2"><option>Semestre I</option></select>
-              <select class="rounded-lg border border-outline-variant px-3 py-2"><option>Entendiendo a Dios</option></select>
+          <div x-show="tab === 'cursos'" x-data="coursesManager()" x-init="initCourses()" class="grid gap-gutter xl:grid-cols-5">
+            <section class="zao-card p-6 xl:col-span-2">
+              <div class="mb-6 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-container text-on-primary-container">
+                    <span class="material-symbols-outlined">menu_book</span>
+                  </span>
+                  <div>
+                    <h2 class="text-headline-md font-semibold text-primary" x-text="editingId ? 'Editar curso' : 'Nuevo curso'"></h2>
+                    <p class="text-label-sm text-on-surface-variant">Oferta académica</p>
+                  </div>
+                </div>
+                <button type="button" x-show="editingId" @click="resetForm()" class="text-label-sm text-primary hover:underline">Cancelar edición</button>
+              </div>
+
+              <p x-show="demoMode" class="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900">
+                Ejecuta <code class="rounded bg-white/80 px-1">supabase/05-courses.sql</code> en Supabase.
+              </p>
+              <p x-show="error" x-text="error" class="mb-4 rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm text-error"></p>
+              <p x-show="success" x-text="success" class="mb-4 rounded-lg border border-tertiary-container/30 bg-tertiary-fixed/20 px-4 py-3 text-sm text-tertiary-container"></p>
+
+              <form @submit.prevent="submitCourse" class="space-y-4">
+                <div>
+                  <label class="mb-1.5 block text-label-md" for="course-title">Título del curso</label>
+                  <input id="course-title" type="text" x-model="form.title" required placeholder="Ej. Entendiendo a Dios" class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-2.5 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                </div>
+
+                <div>
+                  <label class="mb-1.5 block text-label-md" for="course-price">Valor (USD)</label>
+                  <input id="course-price" type="number" x-model="form.price" required min="0.01" step="0.01" placeholder="99.00" class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-2.5 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <p class="mt-1 text-label-sm text-on-surface-variant">Debe ser mayor a $0.00 USD.</p>
+                </div>
+
+                <div>
+                  <label class="mb-1.5 block text-label-md" for="course-teacher">Docente asignado</label>
+                  <select id="course-teacher" x-model="form.teacherId" required class="w-full rounded-lg border border-outline-variant bg-surface px-4 py-2.5 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    <option value="">Seleccionar docente…</option>
+                    <template x-for="t in teachers" :key="t.id">
+                      <option :value="t.id" x-text="t.full_name + ' (' + t.email + ')'"></option>
+                    </template>
+                  </select>
+                  <p x-show="!demoMode && teachers.length === 0" class="mt-1 text-label-sm text-on-surface-variant">Crea docentes en la pestaña Usuarios primero.</p>
+                </div>
+
+                <div>
+                  <label class="mb-1.5 block text-label-md" for="course-cover-input">Imagen de portada</label>
+                  <input id="course-cover-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="onCoverChange($event)" class="w-full text-sm text-on-surface-variant file:mr-3 file:rounded-lg file:border-0 file:bg-surface-container file:px-4 file:py-2 file:font-label-md file:text-primary" />
+                  <div x-show="coverPreview" class="mt-3 overflow-hidden rounded-xl border border-outline-variant">
+                    <img :src="coverPreview" alt="Vista previa portada" class="h-40 w-full object-cover" />
+                  </div>
+                </div>
+
+                <label class="flex cursor-pointer items-center gap-2">
+                  <input type="checkbox" x-model="form.isActive" class="rounded border-outline-variant text-primary focus:ring-primary" />
+                  <span class="text-body-md">Curso visible (activo)</span>
+                </label>
+
+                <button type="submit" :disabled="submitting || demoMode" class="flex w-full items-center justify-center gap-2 rounded-lg bg-secondary-container py-3.5 font-label-md text-on-secondary-container hover:brightness-105 disabled:opacity-60">
+                  <span class="material-symbols-outlined text-xl" x-text="editingId ? 'save' : 'add'"></span>
+                  <span x-text="submitting ? 'Guardando…' : (editingId ? 'Guardar cambios' : 'Publicar curso')"></span>
+                </button>
+              </form>
+            </section>
+
+            <section class="zao-card overflow-hidden xl:col-span-3">
+              <div class="flex items-center justify-between border-b border-outline-variant/40 bg-surface-container-low px-6 py-4">
+                <h2 class="font-label-md text-primary">Cursos publicados</h2>
+                <button type="button" @click="loadCourses()" :disabled="loading || demoMode" class="rounded-lg p-2 text-primary hover:bg-surface-container disabled:opacity-50">
+                  <span class="material-symbols-outlined" :class="loading && 'animate-spin'">refresh</span>
+                </button>
+              </div>
+
+              <div x-show="loading" class="p-10 text-center text-on-surface-variant">Cargando cursos…</div>
+              <div x-show="!loading && courses.length === 0" class="p-10 text-center text-on-surface-variant">No hay cursos. Crea el primero.</div>
+
+              <div x-show="!loading && courses.length > 0" class="grid gap-4 p-4 sm:grid-cols-2">
+                <template x-for="course in courses" :key="course.id">
+                  <article class="overflow-hidden rounded-xl border border-outline-variant/50 bg-surface transition hover:shadow-card">
+                    <div class="relative h-36 bg-surface-container">
+                      <img x-show="course.cover_image_url" :src="course.cover_image_url" :alt="course.title" class="h-full w-full object-cover" />
+                      <div x-show="!course.cover_image_url" class="flex h-full items-center justify-center text-outline">
+                        <span class="material-symbols-outlined text-5xl">image</span>
+                      </div>
+                      <span
+                        class="absolute right-2 top-2 rounded-full px-2 py-0.5 text-xs font-semibold"
+                        :class="course.is_active ? 'bg-tertiary-fixed text-tertiary-container' : 'bg-slate-200 text-slate-600'"
+                        x-text="course.is_active ? 'Activo' : 'Inactivo'"
+                      ></span>
+                    </div>
+                    <div class="p-4">
+                      <h3 class="font-semibold text-on-surface line-clamp-2" x-text="course.title"></h3>
+                      <p class="mt-1 text-lg font-bold text-primary" x-text="formatPrice(course.price)"></p>
+                      <p class="mt-2 flex items-center gap-1 text-label-sm text-on-surface-variant">
+                        <span class="material-symbols-outlined text-base">history_edu</span>
+                        <span x-text="teacherName(course)"></span>
+                      </p>
+                      <div class="mt-4 flex flex-col gap-2">
+                        <a
+                          :href="'cuaderno-curso.html?id=' + course.id"
+                          class="flex items-center justify-center gap-1 rounded-lg bg-primary py-2 text-label-md text-on-primary hover:bg-primary-container"
+                        >
+                          <span class="material-symbols-outlined text-lg">edit_note</span>
+                          Cuaderno de clase
+                        </a>
+                        <div class="flex gap-2">
+                          <button type="button" @click="editCourse(course)" class="flex-1 rounded-lg border border-outline-variant py-2 text-label-md text-primary hover:bg-surface-container">Editar</button>
+                          <button type="button" @click="removeCourse(course)" class="rounded-lg border border-error/30 px-3 py-2 text-error hover:bg-error-container">
+                            <span class="material-symbols-outlined text-xl">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </template>
+              </div>
+            </section>
+          </div>
+
+          <div x-show="tab === 'solicitudes'" x-data="enrollmentRequestsManager()" x-init="initRequests()" class="space-y-6">
+            <p x-show="demoMode" class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900">
+              Ejecuta <code class="rounded bg-white/80 px-1">supabase/08-enrollment-requests.sql</code> para habilitar solicitudes de matrícula.
+            </p>
+            <template x-if="error">
+              <p class="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm text-on-error-container" x-text="error"></p>
+            </template>
+            <template x-if="success">
+              <p class="rounded-lg border border-tertiary-container/30 bg-tertiary-fixed/40 px-4 py-3 text-sm text-tertiary-container" x-text="success"></p>
+            </template>
+
+            <div class="zao-card flex flex-wrap items-center justify-between gap-4 p-4">
+              <div class="flex flex-wrap gap-2">
+                <button type="button" @click="filter = 'pending'; reload()" :class="filter === 'pending' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'" class="rounded-lg px-4 py-2 text-label-md">Pendientes</button>
+                <button type="button" @click="filter = 'approved'; reload()" :class="filter === 'approved' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'" class="rounded-lg px-4 py-2 text-label-md">Aprobadas</button>
+                <button type="button" @click="filter = 'rejected'; reload()" :class="filter === 'rejected' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'" class="rounded-lg px-4 py-2 text-label-md">Rechazadas</button>
+                <button type="button" @click="filter = 'all'; reload()" :class="filter === 'all' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'" class="rounded-lg px-4 py-2 text-label-md">Todas</button>
+              </div>
+              <button type="button" @click="reload()" :disabled="loading" class="rounded-lg border border-outline-variant px-4 py-2 text-primary hover:bg-surface-container disabled:opacity-50">
+                <span class="material-symbols-outlined align-middle" :class="loading && 'animate-spin'">refresh</span>
+              </button>
             </div>
-            <button type="button" class="mt-6 rounded-lg bg-secondary-container px-8 py-3 font-label-md text-on-secondary-container">Iniciar matrícula</button>
+
+            <p x-show="loading" class="text-on-surface-variant">Cargando solicitudes…</p>
+            <p x-show="!loading && requests.length === 0" class="zao-card p-8 text-center text-on-surface-variant">
+              No hay solicitudes en este filtro.
+            </p>
+
+            <div x-show="!loading && requests.length > 0" class="space-y-4">
+              <template x-for="req in requests" :key="req.id">
+                <article class="zao-card p-6">
+                  <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="text-headline-md font-semibold text-primary" x-text="req.student?.full_name"></h3>
+                        <span class="rounded-full px-2 py-0.5 text-label-sm font-semibold" :class="statusBadgeClass(statusMeta(req.status).tone)" x-text="statusMeta(req.status).label"></span>
+                      </div>
+                      <p class="mt-1 text-sm text-on-surface-variant">
+                        <span x-text="req.student?.email"></span>
+                        · <span x-text="req.student?.student_id || '—'"></span>
+                      </p>
+                      <p class="mt-3 text-body-md">
+                        Curso: <strong x-text="req.course?.title"></strong>
+                        · <span class="text-primary" x-text="formatPrice(req.course?.price)"></span>
+                      </p>
+                      <p class="mt-2 text-label-sm text-on-surface-variant" x-text="'Solicitado: ' + formatDate(req.created_at)"></p>
+                      <p x-show="req.message" class="mt-2 rounded-lg bg-surface-container-low px-3 py-2 text-sm">
+                        <span class="font-semibold">Mensaje del estudiante:</span>
+                        <span x-text="req.message"></span>
+                      </p>
+                      <p x-show="req.admin_notes" class="mt-2 text-sm text-on-surface-variant">
+                        Nota admin: <span x-text="req.admin_notes"></span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div x-show="req.status === 'pending'" class="mt-4 border-t border-outline-variant/40 pt-4">
+                    <label class="mb-2 block text-label-md">Nota para el estudiante (opcional)</label>
+                    <textarea x-model="notesById[req.id]" rows="2" placeholder="Ej. Bienvenido al curso…" class="mb-4 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm"></textarea>
+                    <div class="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        @click="approve(req)"
+                        :disabled="processingId === req.id"
+                        class="inline-flex items-center gap-2 rounded-lg bg-tertiary-container px-5 py-2.5 font-label-md text-on-tertiary disabled:opacity-60"
+                      >
+                        <span class="material-symbols-outlined text-lg">check_circle</span>
+                        <span x-text="processingId === req.id ? 'Procesando…' : 'Aprobar y matricular'">Aprobar y matricular</span>
+                      </button>
+                      <button
+                        type="button"
+                        @click="reject(req)"
+                        :disabled="processingId === req.id"
+                        class="inline-flex items-center gap-2 rounded-lg border border-error px-5 py-2.5 font-label-md text-error hover:bg-error-container disabled:opacity-60"
+                      >
+                        <span class="material-symbols-outlined text-lg">cancel</span>
+                        Rechazar
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              </template>
+            </div>
           </div>
 
           <div x-show="tab === 'carga'" class="zao-card border-dashed p-12 text-center">
@@ -264,7 +537,6 @@
       </main>
     </div>
 
-    <script type="module" src="js/admin-staff.js"></script>
-    <script type="module" src="js/layout.js"></script>
+    <script type="module" src="js/init-admin.js"></script>
   </body>
 </html>

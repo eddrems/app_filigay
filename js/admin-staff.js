@@ -1,4 +1,4 @@
-import Alpine from 'https://cdn.jsdelivr.net/npm/alpinejs@3/dist/module.esm.js';
+import Alpine from './alpine-core.js';
 import { fetchStaffUsers, createStaffUser, roleLabel } from './staff-users.js';
 import { isDemoMode } from './session.js';
 

@@ -1,4 +1,4 @@
-import Alpine from 'https://cdn.jsdelivr.net/npm/alpinejs@3/dist/module.esm.js';
+import Alpine from './alpine-core.js';
 import { logout, requireAuth } from './guard.js';
 import { ROLES } from './roles.js';
 
@@ -44,5 +44,3 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 });
-
-Alpine.start();

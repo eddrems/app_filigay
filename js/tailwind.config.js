@@ -1,4 +1,5 @@
 /** Design system Escuela ZAO — Play CDN (sin compilación) */
+window.tailwind = window.tailwind || {};
 tailwind.config = {
   darkMode: 'class',
   theme: {

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "python3 -m http.server 3000",
     "dev:serve": "npx --yes serve . -l 3000",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "check-deploy": "node scripts/check-deploy.mjs"
   }
 }

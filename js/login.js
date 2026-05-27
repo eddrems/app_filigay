@@ -1,4 +1,4 @@
-import Alpine from 'https://cdn.jsdelivr.net/npm/alpinejs@3/dist/module.esm.js';
+import Alpine from './alpine-core.js';
 import { isSupabaseConfigured } from './supabase.js';
 import { signIn } from './auth.js';
 import { loginDemo, getCurrentSession } from './session.js';
@@ -68,5 +68,3 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 });
-
-Alpine.start();

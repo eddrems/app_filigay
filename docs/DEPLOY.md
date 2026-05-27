@@ -11,7 +11,7 @@ Ya está corregido: `config.js` se versiona y la app prioriza Supabase cuando es
 
 ## Publicar (sitio estático)
 
-Sube todo el repo excepto `node_modules/`.
+Sube **todo el repo** excepto `node_modules/` (incluye la carpeta `js/` completa: `init-*.js`, `alpine-core.js`, `alpine-boot.js`, etc.). Un deploy parcial deja la app en “Cargando portal…” o con errores 404 en la consola.
 
 | Plataforma | Publish directory | Build command (opcional) |
 |------------|-------------------|---------------------------|
@@ -59,3 +59,13 @@ Si aún ves demo: borra datos del sitio en el navegador o usa incógnito.
 
 - Publica solo la clave **anon / publishable**.
 - Nunca la **service role** (`sb_secret_…`) en el front.
+
+---
+
+## Safari
+
+- Usa **HTTPS** o `npm run dev` (`http://localhost:3000`). Abrir los `.html` con `file://` suele romper módulos ES en Safari.
+- Requiere **Safari 15+** (módulos ES y `import` desde CDN).
+- Si la pantalla queda en blanco: **Desarrollo → Consola web** y busca errores de red en `cdn.jsdelivr.net` (bloqueadores, VPN, modo estricto).
+- No uses `dist/module/index.js` de Supabase en el front: da error `Failed to resolve module specifier "@supabase/auth-js"`. En este proyecto se usa `+esm` de jsDelivr.
+- El arranque va en un solo script por página (`js/init-admin.js`, `js/init-estudiante.js`, …) para evitar que Alpine inicie antes de registrar componentes.

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi curso — Escuela ZAO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="css/zao.css" />
+  </head>
+  <body class="min-h-full bg-background antialiased" x-data="zaoLayout('student', ['admin', 'teacher', 'student'])">
+    <div x-show="loading" class="flex min-h-screen items-center justify-center text-on-surface-variant">Cargando…</div>
+
+    <div x-show="!loading && session">
+      <header class="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between bg-primary px-4 shadow-header md:px-8">
+        <a href="estudiante.html" class="rounded-lg p-2 text-on-primary hover:bg-primary-container" title="Volver">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <p class="font-label-md text-on-primary">Mi curso</p>
+        <button @click="signOut" type="button" class="rounded-full p-2 text-on-primary hover:bg-primary-container">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </header>
+
+      <main class="mx-auto max-w-container-max px-4 pb-16 pt-24 md:px-gutter">
+        <div x-data="studentCourse()" x-init="initStudentCourse()">
+          <div x-show="loading" class="py-16 text-center text-on-surface-variant">Cargando tu curso…</div>
+
+          <template x-if="!loading && course">
+            <div class="space-y-6">
+              <div>
+                <a href="estudiante.html" class="text-label-sm text-primary hover:underline">← Mis cursos</a>
+                <h1 class="mt-2 text-headline-lg font-bold text-primary" x-text="course.title"></h1>
+                <p class="mt-1 text-body-md text-on-surface-variant">Consulta actividades, asistencia y entrega tus tareas en línea.</p>
+              </div>
+
+              <template x-if="error">
+                <p class="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm text-on-error-container" x-text="error" role="alert"></p>
+              </template>
+              <template x-if="success">
+                <p class="rounded-lg border border-tertiary-container/30 bg-tertiary-fixed/40 px-4 py-3 text-sm text-tertiary-container" x-text="success" role="status"></p>
+              </template>
+
+              <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" x-show="myStats && !error">
+                <div class="zao-card p-4">
+                  <p class="text-label-sm text-on-surface-variant">Mi asistencia</p>
+                  <p class="mt-1 text-headline-md font-bold text-tertiary-container" x-text="formatPercent(myStats?.attendance?.rate)"></p>
+                  <p class="text-label-sm text-on-surface-variant" x-text="(myStats?.attendance?.markedSessions || 0) + ' clase(s) registrada(s)'"></p>
+                </div>
+                <div class="zao-card p-4">
+                  <p class="text-label-sm text-on-surface-variant">Mi promedio</p>
+                  <p class="mt-1 text-headline-md font-bold text-primary" x-text="myStats?.grades?.average !== null ? formatScore(myStats.grades.average) + ' / 100' : '—'"></p>
+                  <p class="text-label-sm text-on-surface-variant" x-text="(myStats?.grades?.gradedCount || 0) + ' de ' + activities.length + ' actividades'"></p>
+                </div>
+                <div class="zao-card p-4">
+                  <p class="text-label-sm text-on-surface-variant">Entregas en línea</p>
+                  <p class="mt-1 text-headline-md font-bold text-on-surface" x-text="submissions.length + '/' + onlineActivities.length"></p>
+                  <p class="text-label-sm text-on-surface-variant">Completadas</p>
+                </div>
+                <div class="zao-card p-4">
+                  <p class="text-label-sm text-on-surface-variant">Próxima clase</p>
+                  <p class="mt-1 text-sm font-semibold text-primary" x-text="upcomingSessions[0] ? formatSessionDateTime(upcomingSessions[0]) : 'Sin fechas'"></p>
+                </div>
+              </div>
+
+              <div class="flex gap-1 overflow-x-auto border-b border-outline-variant" x-show="!error">
+                <button type="button" @click="tab = 'actividades'" :class="tab === 'actividades' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-5 py-3 font-label-md">Actividades</button>
+                <button type="button" @click="tab = 'asistencia'" :class="tab === 'asistencia' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-5 py-3 font-label-md">Mi asistencia</button>
+                <button type="button" @click="tab = 'horario'" :class="tab === 'horario' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-5 py-3 font-label-md">Horario</button>
+              </div>
+
+              <!-- Actividades -->
+              <div x-show="tab === 'actividades' && !error" class="space-y-4">
+                <p x-show="activities.length === 0" class="zao-card p-6 text-sm text-on-surface-variant">Tu docente aún no ha publicado actividades.</p>
+
+                <template x-for="act in activities" :key="act.id">
+                  <article class="zao-card p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 class="text-headline-md font-semibold text-on-surface" x-text="act.title"></h3>
+                        <p class="mt-1 text-sm text-on-surface-variant">
+                          <span class="material-symbols-outlined align-middle text-base">event</span>
+                          <span x-text="' Entrega: ' + formatDueDate(act.due_at)"></span>
+                        </p>
+                      </div>
+                      <span
+                        class="rounded-full px-3 py-1 text-label-sm font-semibold"
+                        :class="statusBadgeClass(activityStatus(act).tone)"
+                        x-text="activityStatus(act).label"
+                      ></span>
+                    </div>
+
+                    <p x-show="act.description" class="mt-3 text-sm text-on-surface-variant" x-text="act.description"></p>
+
+                    <p x-show="gradeFor(act.id) !== null" class="mt-3 rounded-lg bg-primary-container/30 px-4 py-2 text-sm font-semibold text-primary">
+                      Tu nota: <span x-text="formatScore(gradeFor(act.id)) + ' / 100'"></span>
+                    </p>
+
+                    <!-- Entrega en línea -->
+                    <div x-show="act.allow_online_submit" class="mt-4 rounded-xl border border-primary/20 bg-surface-container-low p-4">
+                      <div class="mb-3 flex items-center gap-2 text-label-md text-primary">
+                        <span class="material-symbols-outlined">link</span>
+                        Entrega en línea
+                      </div>
+                      <p class="mb-3 text-label-sm text-on-surface-variant">
+                        Pega el enlace de tu trabajo (Google Drive, Canva, YouTube, etc.).
+                      </p>
+                      <div class="flex flex-col gap-2 sm:flex-row">
+                        <input
+                          type="url"
+                          x-model="linkDrafts[act.id]"
+                          placeholder="https://..."
+                          class="flex-1 rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface"
+                        />
+                        <button
+                          type="button"
+                          @click="saveLink(act.id)"
+                          :disabled="saving"
+                          class="rounded-lg bg-primary px-5 py-2.5 font-label-md text-on-primary disabled:opacity-60"
+                        >
+                          <span x-text="saving && savingActivityId === act.id ? 'Guardando…' : (submissionFor(act.id) ? 'Actualizar enlace' : 'Enviar enlace')">Enviar enlace</span>
+                        </button>
+                      </div>
+                      <p x-show="submissionFor(act.id)" class="mt-2 flex items-center gap-1 text-label-sm text-tertiary-container">
+                        <span class="material-symbols-outlined text-base">check_circle</span>
+                        Entregado el
+                        <span x-text="new Date(submissionFor(act.id).submitted_at).toLocaleString('es-ES')"></span>
+                        —
+                        <a :href="submissionFor(act.id).submission_url" target="_blank" rel="noopener" class="font-semibold text-primary underline">Abrir mi entrega</a>
+                      </p>
+                    </div>
+
+                    <p x-show="!act.allow_online_submit" class="mt-3 text-label-sm text-on-surface-variant">
+                      Esta actividad no requiere entrega en línea.
+                    </p>
+                  </article>
+                </template>
+              </div>
+
+              <!-- Asistencia -->
+              <div x-show="tab === 'asistencia' && !error" class="zao-card p-6">
+                <h2 class="mb-2 text-headline-md font-semibold text-primary">Registro de asistencia</h2>
+                <p class="mb-6 text-sm text-on-surface-variant">
+                  Tu porcentaje actual:
+                  <strong class="text-tertiary-container" x-text="formatPercent(myStats?.attendance?.rate)"></strong>
+                </p>
+
+                <p x-show="attendanceRowsWithRecord.length === 0" class="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface-variant">
+                  Aún no hay asistencia registrada en este curso.
+                </p>
+
+                <div class="overflow-x-auto" x-show="attendanceRowsWithRecord.length > 0">
+                  <table class="w-full text-left text-sm">
+                    <thead>
+                      <tr class="border-b border-outline-variant text-label-sm text-on-surface-variant">
+                        <th class="py-2 pr-4">Fecha de clase</th>
+                        <th class="py-2 text-right">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="row in myAttendanceRows" :key="row.session.id">
+                        <tr x-show="row.record" class="border-b border-outline-variant/30">
+                          <td class="py-3 pr-4" x-text="formatSessionDateTime(row.session)"></td>
+                          <td class="py-3 text-right">
+                            <span
+                              class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-label-sm font-semibold"
+                              :class="attendanceBadgeClass(row.meta.tone)"
+                            >
+                              <span class="material-symbols-outlined text-base" x-text="row.meta.icon"></span>
+                              <span x-text="row.meta.label"></span>
+                            </span>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="mt-6 grid gap-3 sm:grid-cols-4" x-show="myStats?.attendance">
+                  <div class="rounded-lg bg-surface-container-low p-3 text-center">
+                    <p class="text-headline-md font-bold text-tertiary-container" x-text="myStats.attendance.counts.present"></p>
+                    <p class="text-label-sm text-on-surface-variant">Presente</p>
+                  </div>
+                  <div class="rounded-lg bg-surface-container-low p-3 text-center">
+                    <p class="text-headline-md font-bold text-on-secondary-fixed" x-text="myStats.attendance.counts.late"></p>
+                    <p class="text-label-sm text-on-surface-variant">Tarde</p>
+                  </div>
+                  <div class="rounded-lg bg-surface-container-low p-3 text-center">
+                    <p class="text-headline-md font-bold text-on-surface" x-text="myStats.attendance.counts.excused"></p>
+                    <p class="text-label-sm text-on-surface-variant">Justificado</p>
+                  </div>
+                  <div class="rounded-lg bg-surface-container-low p-3 text-center">
+                    <p class="text-headline-md font-bold text-error" x-text="myStats.attendance.counts.absent"></p>
+                    <p class="text-label-sm text-on-surface-variant">Ausente</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Horario -->
+              <div x-show="tab === 'horario' && !error" class="zao-card p-6">
+                <h2 class="mb-4 text-headline-md font-semibold text-primary">Horario de clases</h2>
+                <p x-show="sessions.length === 0" class="text-sm text-on-surface-variant">El docente aún no publicó fechas.</p>
+                <ul class="space-y-2">
+                  <template x-for="s in sessions" :key="s.id">
+                    <li class="flex items-center justify-between rounded-xl border border-outline-variant/40 px-4 py-3 text-sm">
+                      <span x-text="formatSessionDateTime(s)"></span>
+                      <span
+                        x-show="attendanceForSession(s.id)?.record"
+                        class="rounded-full px-2 py-0.5 text-label-sm font-medium"
+                        :class="attendanceBadgeClass(attendanceForSession(s.id)?.meta?.tone)"
+                        x-text="attendanceForSession(s.id)?.meta?.label"
+                      ></span>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+            </div>
+          </template>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="js/init-estudiante-curso.js"></script>
+  </body>
+</html>

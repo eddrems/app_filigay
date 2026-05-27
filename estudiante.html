@@ -35,22 +35,138 @@
       </aside>
 
       <main class="lg:ml-72">
-        <div class="mx-auto max-w-container-max px-4 pb-16 pt-24 md:px-gutter">
+        <div class="mx-auto max-w-container-max px-4 pb-16 pt-24 md:px-gutter" x-data="studentPortal()" x-init="initStudentPortal()">
           <div class="mb-8">
             <h1 class="text-headline-lg font-bold text-primary">Bienvenido, <span x-text="displayName"></span></h1>
-            <p class="mt-2 text-body-lg text-on-surface-variant">Resumen de tu progreso académico y actividades pendientes.</p>
+            <p class="mt-2 text-body-lg text-on-surface-variant">Resumen de tus cursos, actividades y solicitudes de matrícula.</p>
+          </div>
+
+          <div class="mb-6 flex gap-1 overflow-x-auto border-b border-outline-variant">
+            <button type="button" @click="portalTab = 'inicio'" :class="portalTab === 'inicio' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-5 py-3 font-label-md">Mi portal</button>
+            <button type="button" @click="portalTab = 'explorar'; loadExploreData()" :class="portalTab === 'explorar' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-5 py-3 font-label-md">
+              Explorar cursos
+              <span x-show="pendingRequestCount > 0" class="ml-1 rounded-full bg-secondary-container px-2 py-0.5 text-label-sm" x-text="pendingRequestCount"></span>
+            </button>
+          </div>
+
+          <template x-if="error">
+            <p class="mb-4 rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm text-on-error-container" x-text="error"></p>
+          </template>
+          <template x-if="requestSuccess">
+            <p class="mb-4 rounded-lg border border-tertiary-container/30 bg-tertiary-fixed/40 px-4 py-3 text-sm text-tertiary-container" x-text="requestSuccess"></p>
+          </template>
+
+          <!-- Explorar cursos -->
+          <div x-show="portalTab === 'explorar'" class="space-y-6">
+            <section class="zao-card p-6">
+              <h2 class="text-headline-md font-semibold text-primary">Oferta académica disponible</h2>
+              <p class="mt-2 text-body-md text-on-surface-variant">
+                Explora cursos en los que aún no estás matriculado y envía una solicitud. Un administrador confirmará tu matrícula.
+              </p>
+            </section>
+
+            <p x-show="loadingExplore" class="text-on-surface-variant">Cargando cursos…</p>
+
+            <p x-show="!loadingExplore && catalogCourses.length === 0" class="zao-card p-6 text-center text-on-surface-variant">
+              No hay más cursos disponibles para solicitar, o ya tienes solicitudes/matriculas en todos.
+            </p>
+
+            <div x-show="!loadingExplore && catalogCourses.length > 0" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <template x-for="course in catalogCourses" :key="course.id">
+                <article class="zao-card flex flex-col overflow-hidden">
+                  <div class="aspect-[16/10] bg-surface-container">
+                    <img x-show="course.cover_image_url" :src="course.cover_image_url" class="h-full w-full object-cover" alt="" />
+                    <div x-show="!course.cover_image_url" class="flex h-full items-center justify-center text-outline">
+                      <span class="material-symbols-outlined text-5xl">menu_book</span>
+                    </div>
+                  </div>
+                  <div class="flex flex-1 flex-col p-5">
+                    <div class="mb-2 flex items-start justify-between gap-2">
+                      <h3 class="font-semibold text-on-surface" x-text="course.title"></h3>
+                      <span class="shrink-0 rounded-full px-2 py-0.5 text-label-sm font-semibold" :class="badgeForCourseState(course.id).class" x-text="badgeForCourseState(course.id).label"></span>
+                    </div>
+                    <p class="text-sm text-on-surface-variant">
+                      <span class="material-symbols-outlined align-middle text-base">history_edu</span>
+                      <span x-text="' ' + teacherName(course)"></span>
+                    </p>
+                    <p class="mt-2 text-lg font-bold text-primary" x-text="formatPrice(course.price)"></p>
+
+                    <template x-if="courseCardState(course.id).canRequest">
+                      <div class="mt-4 space-y-2">
+                        <label class="text-label-sm text-on-surface-variant">Mensaje opcional al administrador</label>
+                        <textarea x-model="requestMessageByCourse[course.id]" rows="2" placeholder="Ej. Deseo matricularme en el grupo de otoño…" class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm"></textarea>
+                        <button
+                          type="button"
+                          @click="submitEnrollmentRequest(course)"
+                          :disabled="submittingCourseId === course.id"
+                          class="w-full rounded-lg bg-primary py-2.5 font-label-md text-on-primary disabled:opacity-60"
+                        >
+                          <span x-text="submittingCourseId === course.id ? 'Enviando…' : 'Solicitar matrícula'">Solicitar matrícula</span>
+                        </button>
+                      </div>
+                    </template>
+
+                    <p x-show="courseCardState(course.id).key === 'pending'" class="mt-4 text-sm text-on-surface-variant">
+                      Tu solicitud está en revisión. Te avisaremos cuando sea aprobada.
+                    </p>
+                    <p x-show="courseCardState(course.id).key === 'rejected'" class="mt-4 text-sm text-error">
+                      Solicitud rechazada. Puedes enviar una nueva solicitud.
+                    </p>
+                  </div>
+                </article>
+              </template>
+            </div>
+
+            <section class="zao-card p-6" x-show="myRequests.length > 0">
+              <h3 class="mb-4 text-headline-md font-semibold text-primary">Mis solicitudes</h3>
+              <ul class="space-y-3">
+                <template x-for="req in myRequests" :key="req.id">
+                  <li class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-outline-variant/50 px-4 py-3 text-sm">
+                    <div>
+                      <p class="font-medium" x-text="courseTitleById(req.course_id)"></p>
+                      <p class="text-label-sm text-on-surface-variant" x-text="new Date(req.created_at).toLocaleString('es-ES')"></p>
+                    </div>
+                    <span class="rounded-full px-2 py-0.5 font-semibold" :class="requestBadgeClass(requestStatusLabel(req.status).tone)" x-text="requestStatusLabel(req.status).label"></span>
+                  </li>
+                </template>
+              </ul>
+            </section>
+          </div>
+
+          <div x-show="portalTab === 'inicio'">
+          <p x-show="loadingDashboard" class="mb-6 text-on-surface-variant">Cargando tu información…</p>
+
+          <!-- KPIs -->
+          <div class="mb-gutter grid gap-3 sm:grid-cols-2 xl:grid-cols-4" x-show="summary && !loadingDashboard">
+            <div class="zao-card p-4">
+              <p class="text-label-sm text-on-surface-variant">Cursos activos</p>
+              <p class="mt-1 text-headline-md font-bold text-primary" x-text="summary.courseCount"></p>
+            </div>
+            <div class="zao-card p-4">
+              <p class="text-label-sm text-on-surface-variant">Promedio general</p>
+              <p class="mt-1 text-headline-md font-bold text-primary" x-text="summary.overallGradeAvg !== null ? formatScore(summary.overallGradeAvg) + ' / 100' : '—'"></p>
+            </div>
+            <div class="zao-card p-4">
+              <p class="text-label-sm text-on-surface-variant">Asistencia promedio</p>
+              <p class="mt-1 text-headline-md font-bold text-tertiary-container" x-text="formatPercent(summary.overallAttendanceAvg)"></p>
+            </div>
+            <div class="zao-card p-4">
+              <p class="text-label-sm text-on-surface-variant">Actividades pendientes</p>
+              <p class="mt-1 text-headline-md font-bold text-on-surface" x-text="summary.pendingActivities"></p>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 gap-gutter lg:grid-cols-12">
             <div class="flex flex-col gap-gutter lg:col-span-8">
-              <section class="zao-card relative overflow-hidden p-6">
+              <!-- Perfil -->
+              <section class="zao-card p-6">
                 <div class="flex flex-col gap-6 sm:flex-row sm:items-center">
-                  <div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary-container text-2xl font-bold text-on-primary-container" x-text="(session?.name || 'AZ').split(' ').map(n=>n[0]).join('').slice(0,2)"></div>
+                  <div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary-container text-2xl font-bold text-on-primary-container" x-text="initials"></div>
                   <div>
                     <h2 class="text-headline-md font-semibold text-on-surface" x-text="session?.name"></h2>
                     <p class="mt-2 flex items-center gap-2 text-body-md text-on-surface-variant">
                       <span class="material-symbols-outlined text-lg">badge</span>
-                      <span x-text="session?.studentId || 'ZAO-2023-459'"></span>
+                      <span x-text="session?.studentId || '—'"></span>
                     </p>
                     <p class="mt-1 flex items-center gap-2 text-body-md text-on-surface-variant">
                       <span class="material-symbols-outlined text-lg">mail</span>
@@ -60,48 +176,127 @@
                 </div>
               </section>
 
-              <section class="glass-card zao-card p-6">
+              <!-- Cursos -->
+              <section class="zao-card p-6">
+                <h3 class="mb-4 text-headline-md font-semibold text-primary">Mis cursos matriculados</h3>
+                <p x-show="loadingCourses" class="text-on-surface-variant">Cargando cursos…</p>
+                <p x-show="!loadingCourses && enrollments.length === 0" class="rounded-lg bg-surface-container-low p-4 text-on-surface-variant">
+                  Aún no tienes cursos asignados. Contacta a administración.
+                </p>
+                <div x-show="!loadingCourses && enrollments.length > 0" class="grid gap-3 sm:grid-cols-2">
+                  <template x-for="row in enrollments" :key="row.id">
+                    <article class="flex flex-col gap-3 rounded-xl border border-outline-variant p-3 sm:flex-row">
+                      <div class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-surface-container">
+                        <img x-show="row.course?.cover_image_url" :src="row.course.cover_image_url" class="h-full w-full object-cover" alt="" />
+                        <div x-show="!row.course?.cover_image_url" class="flex h-full items-center justify-center text-outline">
+                          <span class="material-symbols-outlined">menu_book</span>
+                        </div>
+                      </div>
+                      <div class="flex flex-1 flex-col">
+                        <p class="font-semibold text-on-surface" x-text="row.course?.title"></p>
+                        <p class="text-sm font-bold text-primary" x-text="formatPrice(row.course?.price)"></p>
+                        <a
+                          x-show="row.course?.id"
+                          :href="courseUrl(row.course.id)"
+                          class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-label-sm font-semibold text-on-primary hover:bg-primary-container sm:w-auto"
+                        >
+                          Ver mi curso
+                          <span class="material-symbols-outlined text-base">arrow_forward</span>
+                        </a>
+                      </div>
+                    </article>
+                  </template>
+                </div>
+              </section>
+
+              <!-- Actividades recientes -->
+              <section class="zao-card p-6" x-show="!loadingDashboard && enrollments.length > 0">
                 <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <h3 class="text-headline-md font-semibold text-primary">Progreso del curso actual</h3>
-                    <p class="text-body-md text-on-surface-variant">Entendiendo a Dios — Módulo 3</p>
+                    <h3 class="text-headline-md font-semibold text-primary">Mis actividades</h3>
+                    <p class="text-body-md text-on-surface-variant" x-show="primaryCourse">
+                      Curso destacado: <span x-text="primaryCourse?.title"></span>
+                    </p>
                   </div>
-                  <span class="rounded-full border border-primary/20 bg-surface-container-high px-3 py-1 text-label-sm text-primary">En curso</span>
+                  <a x-show="primaryCourse" :href="primaryCourseUrl" class="text-label-sm font-semibold text-primary hover:underline">Ver todo el curso →</a>
                 </div>
-                <div class="mb-6">
-                  <div class="mb-2 flex justify-between text-label-sm"><span>Progreso general</span><span class="font-bold text-primary">65%</span></div>
-                  <div class="h-2.5 w-full rounded-full bg-surface-container"><div class="h-2.5 w-[65%] rounded-full bg-primary"></div></div>
+
+                <div x-show="summary" class="mb-6">
+                  <div class="mb-2 flex justify-between text-label-sm">
+                    <span>Actividades calificadas</span>
+                    <span class="font-bold text-primary" x-text="summary.progressPct + '%'"></span>
+                  </div>
+                  <div class="h-2.5 w-full rounded-full bg-surface-container">
+                    <div class="h-2.5 rounded-full bg-primary transition-all" :style="'width:' + summary.progressPct + '%'"></div>
+                  </div>
                 </div>
-                <div class="overflow-x-auto">
+
+                <p x-show="activityFeed.length === 0" class="text-sm text-on-surface-variant">No hay actividades publicadas en tus cursos.</p>
+
+                <div class="overflow-x-auto" x-show="activityFeed.length > 0">
                   <table class="w-full text-left text-body-md">
-                    <thead><tr class="border-b border-outline-variant/50"><th class="py-3 text-label-md text-primary">Actividad</th><th class="py-3 text-label-md text-primary">Fecha</th><th class="py-3 text-label-md text-primary">Estado</th><th class="py-3 text-right text-label-md text-primary">Nota</th></tr></thead>
+                    <thead>
+                      <tr class="border-b border-outline-variant/50">
+                        <th class="py-3 text-label-md text-primary">Actividad</th>
+                        <th class="py-3 text-label-md text-primary">Curso</th>
+                        <th class="py-3 text-label-md text-primary">Entrega</th>
+                        <th class="py-3 text-label-md text-primary">Estado</th>
+                        <th class="py-3 text-right text-label-md text-primary">Nota</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      <tr class="border-b border-outline-variant/30"><td class="py-3">Ensayo: Atributos divinos</td><td class="text-on-surface-variant">12 Oct</td><td><span class="zao-badge-success">Completado</span></td><td class="text-right font-bold text-primary">95</td></tr>
-                      <tr class="border-b border-outline-variant/30"><td class="py-3">Examen parcial 1</td><td class="text-on-surface-variant">20 Oct</td><td><span class="zao-badge-success">Completado</span></td><td class="text-right font-bold text-primary">88</td></tr>
-                      <tr><td class="py-3 font-medium">Foro: La Trinidad</td><td class="text-on-surface-variant">05 Nov</td><td><span class="zao-badge-pending">Pendiente</span></td><td class="text-right text-outline">—</td></tr>
+                      <template x-for="act in recentActivities" :key="act.id + act.courseId">
+                        <tr class="border-b border-outline-variant/30">
+                          <td class="py-3 font-medium" x-text="act.title"></td>
+                          <td class="py-3 text-on-surface-variant" x-text="act.courseTitle"></td>
+                          <td class="py-3 text-on-surface-variant" x-text="formatShortDate(act.due_at)"></td>
+                          <td class="py-3">
+                            <span :class="statusBadgeClass(act.status.badge)" x-text="act.status.label"></span>
+                          </td>
+                          <td class="py-3 text-right font-bold text-primary" x-text="act.score !== null ? formatScore(act.score) : '—'"></td>
+                        </tr>
+                      </template>
                     </tbody>
                   </table>
                 </div>
               </section>
 
-              <section class="zao-card p-6">
-                <h3 class="mb-6 text-headline-md font-semibold text-primary">Historial académico</h3>
+              <!-- Resumen por curso -->
+              <section class="zao-card p-6" x-show="!loadingDashboard && courseSnapshots.length > 0">
+                <h3 class="mb-6 text-headline-md font-semibold text-primary">Resumen por curso</h3>
                 <div class="grid gap-4 md:grid-cols-2">
-                  <div class="rounded-xl border border-outline-variant p-4 transition hover:shadow-card">
-                    <div class="flex justify-between"><h4 class="font-label-md">Fundamentos de la fe</h4><span class="material-symbols-outlined text-tertiary-container">check_circle</span></div>
-                    <p class="mt-2 text-sm text-on-surface-variant">Periodo 1 — 2024</p>
-                    <p class="mt-3 flex justify-between font-label-sm text-primary"><span>Calificación</span><span class="font-bold">98%</span></p>
-                  </div>
-                  <div class="rounded-xl border border-outline-variant p-4 transition hover:shadow-card">
-                    <div class="flex justify-between"><h4 class="font-label-md">Liderazgo espiritual</h4><span class="material-symbols-outlined text-tertiary-container">check_circle</span></div>
-                    <p class="mt-2 text-sm text-on-surface-variant">Periodo 2 — 2024</p>
-                    <p class="mt-3 flex justify-between font-label-sm text-primary"><span>Calificación</span><span class="font-bold">92%</span></p>
-                  </div>
+                  <template x-for="snap in courseSnapshots" :key="snap.course.id">
+                    <div class="rounded-xl border border-outline-variant p-4 transition hover:shadow-card">
+                      <div class="flex items-start justify-between gap-2">
+                        <h4 class="font-label-md text-on-surface" x-text="snap.course.title"></h4>
+                        <a :href="courseUrl(snap.course.id)" class="text-label-sm text-primary hover:underline">Abrir</a>
+                      </div>
+                      <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p class="text-label-sm text-on-surface-variant">Promedio</p>
+                          <p class="font-bold text-primary" x-text="snap.gradeStat?.average !== null ? formatScore(snap.gradeStat.average) + '/100' : '—'"></p>
+                        </div>
+                        <div>
+                          <p class="text-label-sm text-on-surface-variant">Asistencia</p>
+                          <p class="font-bold text-tertiary-container" x-text="formatPercent(snap.attendanceStat?.rate)"></p>
+                        </div>
+                        <div>
+                          <p class="text-label-sm text-on-surface-variant">Actividades</p>
+                          <p class="font-semibold" x-text="snap.activities.length"></p>
+                        </div>
+                        <div>
+                          <p class="text-label-sm text-on-surface-variant">Inversión</p>
+                          <p class="font-semibold text-primary" x-text="formatPrice(snap.course.price)"></p>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
                 </div>
               </section>
             </div>
 
             <div class="flex flex-col gap-gutter lg:col-span-4">
+              <!-- Asistencia -->
               <section class="relative overflow-hidden rounded-2xl bg-primary p-6 text-on-primary shadow-card">
                 <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary-container/50"></div>
                 <div class="relative z-10">
@@ -109,41 +304,75 @@
                     <span class="material-symbols-outlined text-3xl text-secondary-container">how_to_reg</span>
                     <h3 class="text-headline-md font-bold">Mi asistencia</h3>
                   </div>
-                  <p class="mb-6 text-body-md opacity-90">Curso: <strong>Entendiendo a Dios</strong></p>
-                  <div class="mb-6 rounded-xl border border-on-primary/10 bg-primary-container p-4 text-center">
-                    <p class="text-label-sm uppercase opacity-80">Clase de hoy</p>
-                    <p class="text-headline-md font-bold">28 Octubre</p>
-                    <p class="mt-1 text-secondary-container">18:00 – 20:00</p>
+                  <p class="mb-2 text-headline-md font-bold" x-text="formatPercent(summary?.overallAttendanceAvg)"></p>
+                  <p class="mb-6 text-body-md opacity-90">Promedio en todos tus cursos</p>
+
+                  <div class="mb-6 rounded-xl border border-on-primary/10 bg-primary-container p-4" x-show="nextSession">
+                    <p class="text-label-sm uppercase opacity-80">Próxima clase</p>
+                    <p class="mt-1 text-sm font-semibold" x-text="nextSession.course?.title"></p>
+                    <p class="text-headline-md font-bold" x-text="formatSessionDateTime(nextSession.session)"></p>
                   </div>
-                  <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary-container py-4 font-label-md font-bold text-on-secondary-container shadow-sm hover:brightness-105">
-                    <span class="material-symbols-outlined">fingerprint</span>
-                    Registrar asistencia
-                  </button>
+                  <p x-show="!nextSession && !loadingDashboard" class="mb-6 text-sm opacity-80">No hay clases programadas próximamente.</p>
+
+                  <a
+                    x-show="primaryCourse"
+                    :href="primaryCourseUrl + '&tab=asistencia'"
+                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary-container py-4 font-label-md font-bold text-on-secondary-container shadow-sm hover:brightness-105"
+                  >
+                    <span class="material-symbols-outlined">visibility</span>
+                    Ver detalle de asistencia
+                  </a>
                 </div>
               </section>
 
-              <section class="zao-card p-6">
+              <!-- Pendientes -->
+              <section class="zao-card p-6" x-show="pendingActivities.length > 0">
+                <div class="mb-4 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-secondary">assignment_late</span>
+                  <h3 class="text-headline-md font-semibold text-primary">Por entregar</h3>
+                </div>
+                <ul class="space-y-3">
+                  <template x-for="act in pendingActivities.slice(0, 5)" :key="act.id + '-pending'">
+                    <li class="rounded-lg border border-outline-variant bg-surface p-3">
+                      <p class="font-label-md" x-text="act.title"></p>
+                      <p class="text-label-sm text-on-surface-variant" x-text="act.courseTitle"></p>
+                      <p class="mt-1 text-label-sm text-on-surface-variant" x-text="'Entrega: ' + formatDueDate(act.due_at)"></p>
+                      <a :href="courseUrlWithTab(act.courseId, 'actividades')" class="mt-2 inline-block text-label-sm font-semibold text-primary hover:underline">Entregar enlace →</a>
+                    </li>
+                  </template>
+                </ul>
+              </section>
+
+              <!-- Inversión / matrícula -->
+              <section class="zao-card p-6" x-show="summary">
                 <div class="mb-6 flex items-center gap-2">
                   <span class="material-symbols-outlined text-primary">account_balance_wallet</span>
-                  <h3 class="text-headline-md font-semibold text-primary">Estado de cuenta</h3>
+                  <h3 class="text-headline-md font-semibold text-primary">Mis cursos (inversión)</h3>
                 </div>
                 <div class="mb-6 rounded-xl bg-surface-container-high p-4">
-                  <p class="text-label-sm uppercase text-on-surface-variant">Saldo pendiente</p>
-                  <p class="text-headline-lg font-bold text-primary">$0.00</p>
-                  <p class="mt-1 flex items-center gap-1 text-sm text-tertiary-container"><span class="material-symbols-outlined text-sm">verified</span> Al día</p>
+                  <p class="text-label-sm uppercase text-on-surface-variant">Total matriculado</p>
+                  <p class="text-headline-lg font-bold text-primary" x-text="formatPrice(summary.totalTuition)"></p>
+                  <p class="mt-1 text-label-sm text-on-surface-variant">Según precio de cada curso activo</p>
                 </div>
                 <ul class="space-y-3 text-body-md">
-                  <li class="flex items-center justify-between rounded-lg border border-outline-variant bg-surface p-3"><div><p class="font-label-md">Matrícula</p><p class="text-label-sm text-on-surface-variant">Pagado 01 Sep</p></div><span class="zao-badge-success">Pagado</span></li>
-                  <li class="flex items-center justify-between rounded-lg border border-outline-variant bg-surface p-3"><div><p class="font-label-md">Cuota 1</p><p class="text-label-sm text-on-surface-variant">Pagado 01 Oct</p></div><span class="zao-badge-success">Pagado</span></li>
-                  <li class="flex items-center justify-between rounded-lg border border-outline-variant bg-surface p-3 opacity-70"><div><p class="font-label-md">Cuota 2</p><p class="text-label-sm text-on-surface-variant">Vence 01 Nov</p></div><span class="font-label-md text-primary">$50.00</span></li>
+                  <template x-for="row in enrollments" :key="row.id + '-fee'">
+                    <li class="flex items-center justify-between rounded-lg border border-outline-variant bg-surface p-3">
+                      <div>
+                        <p class="font-label-md" x-text="row.course?.title"></p>
+                        <p class="text-label-sm text-on-surface-variant">Matrícula activa</p>
+                      </div>
+                      <span class="font-semibold text-primary" x-text="formatPrice(row.course?.price)"></span>
+                    </li>
+                  </template>
                 </ul>
               </section>
             </div>
+          </div>
           </div>
         </div>
       </main>
     </div>
 
-    <script type="module" src="js/layout.js"></script>
+    <script type="module" src="js/init-estudiante.js"></script>
   </body>
 </html>

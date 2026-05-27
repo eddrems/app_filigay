@@ -84,7 +84,7 @@ Credenciales:
 |-------|------------|
 | admin@zao.edu | admin123 |
 | maestro@zao.edu | prof123 |
-| estudiante@zao.edu | alum123 |
+| estudiante@zao.edu | 3001234567 (su teléfono; debe cambiar clave al primer ingreso) |
 
 Al final debes ver **3 filas** en las tres consultas de verificación.
 
@@ -92,11 +92,60 @@ Al final debes ver **3 filas** en las tres consultas de verificación.
 
 ---
 
-## Paso 5b: Crear usuarios desde el panel admin (opcional)
+## Paso 5b: Estudiantes y matrículas
+
+Ejecuta `supabase/06-students-enrollments.sql`.
+
+En **admin.html** → **Alumnos**:
+
+- Crear estudiante (cuenta Auth + perfil; **clave inicial = teléfono**, mín. 6 caracteres)
+- Matricular en **uno o varios cursos** (checkboxes)
+
+El estudiante inicia con correo + teléfono como contraseña, va a `actualizar-perfil.html` para definir una clave nueva, y luego ve sus cursos en **estudiante.html**.
+
+> Si ya ejecutaste `06-students-enrollments.sql` antes, vuelve a ejecutar la función `admin_create_student_user` (archivo actualizado, sin parámetro `p_password`).
+
+---
+
+## Paso 5c: Cursos (oferta académica)
+
+Ejecuta `supabase/05-courses.sql` (tabla `courses` + bucket `course-covers`).
+
+En **admin.html** → **Oferta académica** puedes crear cursos con título, precio, docente e imagen de portada.
+
+---
+
+## Paso 5d: Crear usuarios staff desde el panel admin (opcional)
 
 Ejecuta en SQL Editor: `supabase/04-admin-create-user.sql`
 
 Luego, como **admin**, en `admin.html` → pestaña **Usuarios admin / docente** puedes crear cuentas con rol administrador o docente.
+
+---
+
+## Paso 5e: Cuaderno de clase
+
+Ejecuta `supabase/07-course-classroom.sql`.
+
+**Docentes y administradores** — `docente.html` → **Cuaderno de clase**, o desde **admin** → Oferta académica → **Cuaderno de clase** en cada curso:
+
+| Pestaña | Función |
+|---------|---------|
+| Horario | Crear fechas por rango (ej. todos los jueves entre dos fechas a las 19:00) |
+| Asistencia | Marcar presente, tarde, justificado o ausente por fecha de clase |
+| Actividades y notas | Crear tareas, fecha de entrega, entrega en línea; calificar sobre **100** |
+
+**Estudiantes** — `estudiante.html` → **Actividades y entregas**: horario, notas y enlace de entrega cuando la actividad lo permita.
+
+---
+
+## Paso 5f: Solicitudes de matrícula
+
+Ejecuta `supabase/08-enrollment-requests.sql`.
+
+**Estudiante** — `estudiante.html` → pestaña **Explorar cursos**: ve cursos activos sin matrícula, envía solicitud con mensaje opcional.
+
+**Administrador** — `admin.html` → **Solicitudes de matrícula**: filtra pendientes/aprobadas/rechazadas, **Aprobar y matricular** crea la matrícula en `enrollments`, o **Rechazar** con nota opcional.
 
 ---
 
@@ -109,7 +158,8 @@ npm run dev
 1. Abre http://localhost:3000
 2. Inicia sesión con `admin@zao.edu` / `admin123`
 3. Debes llegar a `admin.html`
-4. Prueba `maestro@zao.edu` → `docente.html` y `estudiante@zao.edu` → `estudiante.html`
+4. Prueba `maestro@zao.edu` → `docente.html`
+5. Prueba `estudiante@zao.edu` / `3001234567` → pantalla de nueva contraseña → `estudiante.html`
 
 ---
 
@@ -128,11 +178,11 @@ El **rol** lo define la columna `profiles.role` (fuente principal). Si falla la 
 
 ---
 
-## Actualizar perfil (primera vez)
+## Actualizar perfil (primera vez — estudiantes)
 
 Si `needs_profile_update = true`, el usuario va a `actualizar-perfil.html` antes del portal.
 
-Tras guardar, se actualizan `profiles` y `auth.users` metadata.
+Debe elegir una **nueva contraseña** (no puede ser igual al teléfono), confirmar correo/teléfono, y guardar. Tras guardar se actualizan Auth (contraseña), `profiles` y metadata (`needs_profile_update = false`).
 
 ---
 

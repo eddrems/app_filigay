@@ -31,6 +31,33 @@ export async function updateProfile(userId, fields) {
   return data;
 }
 
+/** Primer acceso: nueva contraseña + perfil + metadata en una sola operación Auth */
+export async function completeFirstLogin({ userId, password, email, phone, fullName }) {
+  const supabase = getSupabase();
+
+  const { error: authError } = await supabase.auth.updateUser({
+    password,
+    data: {
+      phone,
+      full_name: fullName,
+      needs_profile_update: false,
+    },
+  });
+  if (authError) throw authError;
+
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({
+      email,
+      phone,
+      full_name: fullName,
+      needs_profile_update: false,
+    })
+    .eq('id', userId);
+
+  if (profileError) throw profileError;
+}
+
 export async function updateUserMetadata(fields) {
   const supabase = getSupabase();
   const { data, error } = await supabase.auth.updateUser({

@@ -37,3 +37,63 @@ body {
   font-weight: 700;
   box-shadow: 0 1px 3px rgba(0, 35, 111, 0.08);
 }
+
+.zao-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(197, 197, 211, 0.5);
+  background: #ffffff;
+  box-shadow: 0 4px 24px -4px rgba(0, 35, 111, 0.1);
+}
+
+.zao-badge-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  background: rgba(111, 251, 190, 0.35);
+  padding: 0.25rem 0.75rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: #004a31;
+}
+
+.zao-badge-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  background: #ffdf9a;
+  padding: 0.25rem 0.75rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6d5200;
+}
+
+.zao-stat-bar {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #e5eeff;
+  overflow: hidden;
+}
+
+.zao-stat-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.35s ease;
+}
+
+.zao-stat-bar-fill--attendance {
+  background: linear-gradient(90deg, #004a31, #27c38a);
+}
+
+.zao-stat-bar-fill--grade-high {
+  background: linear-gradient(90deg, #1e3a8a, #4059aa);
+}
+
+.zao-stat-bar-fill--grade-mid {
+  background: linear-gradient(90deg, #6d5200, #fdc425);
+}
+
+.zao-stat-bar-fill--grade-low {
+  background: linear-gradient(90deg, #93000a, #ba1a1a);
+}

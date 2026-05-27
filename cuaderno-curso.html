@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cuaderno de clase — Escuela ZAO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="css/zao.css" />
+  </head>
+  <body
+    class="min-h-full bg-background antialiased"
+    x-data="zaoLayout('teacher', ['admin', 'teacher'])"
+  >
+    <div x-show="loading" class="flex min-h-screen items-center justify-center text-on-surface-variant">Cargando…</div>
+
+    <div x-show="!loading && session">
+      <header class="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between bg-primary px-4 shadow-header md:px-8">
+        <div class="flex items-center gap-3">
+          <a href="docente.html" class="rounded-lg p-2 text-on-primary hover:bg-primary-container" title="Volver">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </a>
+          <p class="font-label-md text-on-primary">Cuaderno de clase</p>
+        </div>
+        <button @click="signOut" type="button" class="rounded-full p-2 text-on-primary hover:bg-primary-container">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </header>
+
+      <main class="mx-auto max-w-container-max px-4 pb-16 pt-24 md:px-gutter">
+        <div x-data="courseNotebook()" x-init="initNotebook()">
+          <div x-show="loading" class="py-16 text-center text-on-surface-variant">Cargando cuaderno…</div>
+
+          <template x-if="!loading && course">
+            <div class="space-y-6">
+              <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <a href="docente.html" class="text-label-sm text-primary hover:underline">← Mis cursos</a>
+                  <h1 class="mt-2 text-headline-lg font-bold text-primary" x-text="course.title"></h1>
+                  <p class="mt-1 text-body-md text-on-surface-variant">
+                    <span x-text="students.length"></span> alumno(s) matriculado(s)
+                  </p>
+                </div>
+              </div>
+
+              <template x-if="error">
+                <p class="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm text-on-error-container" x-text="error" role="alert"></p>
+              </template>
+              <template x-if="success">
+                <p class="rounded-lg border border-tertiary-container/30 bg-tertiary-fixed/40 px-4 py-3 text-sm text-tertiary-container" x-text="success" role="status"></p>
+              </template>
+
+              <!-- Resumen rápido -->
+              <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="zao-card p-4">
+                  <p class="text-label-sm text-on-surface-variant">Asistencia del curso</p>
+                  <p class="mt-1 text-headline-md font-bold text-tertiary-container" x-text="formatPercent(statsSummary.courseAttendanceRate)"></p>
+                  <p class="mt-1 text-label-sm text-on-surface-variant">
+                    <span x-text="statsSummary.sessionsWithAttendance"></span>/<span x-text="statsSummary.sessionCount"></span> clases con registro
+                  </p>
+                </div>
+                <div class="zao-card p-4">
+                  <p class="text-label-sm text-on-surface-variant">Promedio general (actividades)</p>
+                  <p class="mt-1 text-headline-md font-bold text-primary" x-text="statsSummary.courseAverageOfStudentAverages !== null ? formatScore(statsSummary.courseAverageOfStudentAverages) + ' / 100' : '—'"></p>
+                  <p class="mt-1 text-label-sm text-on-surface-variant">
+                    <span x-text="statsSummary.activityCount"></span> actividad(es) · <span x-text="statsSummary.totalGradesEntered"></span> nota(s)
+                  </p>
+                </div>
+                <div class="zao-card p-4">
+                  <p class="text-label-sm text-on-surface-variant">Promedio de todas las notas</p>
+                  <p class="mt-1 text-headline-md font-bold text-primary" x-text="statsSummary.courseGradeAverage !== null ? formatScore(statsSummary.courseGradeAverage) + ' / 100' : '—'"></p>
+                  <p class="mt-1 text-label-sm text-on-surface-variant">Sobre calificaciones registradas</p>
+                </div>
+                <div class="zao-card p-4">
+                  <p class="text-label-sm text-on-surface-variant">Alumnos matriculados</p>
+                  <p class="mt-1 text-headline-md font-bold text-on-surface" x-text="statsSummary.studentCount"></p>
+                  <p class="mt-1 text-label-sm text-on-surface-variant">Prom. asistencia por alumno: <span x-text="formatPercent(statsSummary.avgStudentAttendanceRate)"></span></p>
+                </div>
+              </div>
+
+              <div class="flex gap-1 overflow-x-auto border-b border-outline-variant">
+                <button type="button" @click="tab = 'horario'" :class="tab === 'horario' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-5 py-3 font-label-md">Horario</button>
+                <button type="button" @click="tab = 'asistencia'" :class="tab === 'asistencia' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-5 py-3 font-label-md">Asistencia</button>
+                <button type="button" @click="tab = 'actividades'" :class="tab === 'actividades' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-5 py-3 font-label-md">Actividades y notas</button>
+                <button type="button" @click="tab = 'estadisticas'" :class="tab === 'estadisticas' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'" class="whitespace-nowrap border-b-2 px-5 py-3 font-label-md">Estadísticas</button>
+              </div>
+
+              <!-- Horario -->
+              <div x-show="tab === 'horario'" class="grid gap-gutter lg:grid-cols-2">
+                <section class="zao-card p-6">
+                  <h2 class="mb-1 text-headline-md font-semibold text-primary">Crear por rango</h2>
+                  <p class="mb-4 text-sm text-on-surface-variant">
+                    Ej.: todos los <strong>jueves</strong> entre dos fechas a las <strong>19:00</strong>.
+                  </p>
+                  <form @submit.prevent="applyRange" class="space-y-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label class="mb-1 block text-label-md">Día de la semana</label>
+                        <select x-model.number="rangeForm.weekday" @change="previewRange()" class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5">
+                          <template x-for="d in weekdays" :key="d.value">
+                            <option :value="d.value" x-text="d.label"></option>
+                          </template>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-label-md">Hora inicio</label>
+                        <input type="time" x-model="rangeForm.startTime" @change="previewRange()" class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5" />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-label-md">Desde (fecha)</label>
+                        <input type="date" x-model="rangeForm.startDate" @change="previewRange()" required class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5" />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-label-md">Hasta (fecha)</label>
+                        <input type="date" x-model="rangeForm.endDate" @change="previewRange()" required class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5" />
+                      </div>
+                      <div class="sm:col-span-2">
+                        <label class="mb-1 block text-label-md">Hora fin (opcional)</label>
+                        <input type="time" x-model="rangeForm.endTime" @change="previewRange()" class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5" />
+                      </div>
+                    </div>
+                    <p class="text-sm text-on-surface-variant" x-show="rangePreview.length > 0">
+                      Vista previa: <strong x-text="rangePreview.length"></strong> clase(s) se crearán.
+                    </p>
+                    <button type="submit" :disabled="saving" class="rounded-lg bg-primary px-6 py-3 font-label-md text-on-primary disabled:opacity-60">
+                      <span x-text="saving ? 'Creando…' : 'Generar fechas'">Generar fechas</span>
+                    </button>
+                  </form>
+                </section>
+
+                <section class="zao-card p-6">
+                  <h2 class="mb-4 text-headline-md font-semibold text-primary">Fechas programadas</h2>
+                  <p x-show="sessions.length === 0" class="text-sm text-on-surface-variant">Aún no hay clases en el calendario.</p>
+                  <ul class="max-h-[420px] space-y-2 overflow-y-auto">
+                    <template x-for="s in sessions" :key="s.id">
+                      <li class="flex items-center justify-between gap-2 rounded-xl border border-outline-variant/40 bg-surface px-4 py-3">
+                        <span class="text-sm font-medium" x-text="formatSessionDateTime(s)"></span>
+                        <button type="button" @click="removeSession(s.id)" class="text-error hover:underline text-label-sm">Eliminar</button>
+                      </li>
+                    </template>
+                  </ul>
+                </section>
+              </div>
+
+              <!-- Asistencia -->
+              <div x-show="tab === 'asistencia'" class="space-y-6">
+              <section class="zao-card p-6" x-show="statsSummary.sessionsWithAttendance > 0">
+                <h2 class="mb-4 text-headline-md font-semibold text-primary">Resumen de asistencia</h2>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-sm">
+                    <thead>
+                      <tr class="border-b border-outline-variant text-label-sm text-on-surface-variant">
+                        <th class="py-2 pr-4">Alumno</th>
+                        <th class="py-2 pr-4">%</th>
+                        <th class="py-2 pr-4">Presente</th>
+                        <th class="py-2 pr-4">Tarde</th>
+                        <th class="py-2 pr-4">Justif.</th>
+                        <th class="py-2">Ausente</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="row in stats.attendanceByStudent" :key="row.studentId">
+                        <tr class="border-b border-outline-variant/30">
+                          <td class="py-3 pr-4 font-medium" x-text="row.fullName"></td>
+                          <td class="py-3 pr-4">
+                            <div class="flex min-w-[120px] items-center gap-2">
+                              <div class="zao-stat-bar flex-1"><div class="zao-stat-bar-fill zao-stat-bar-fill--attendance" :style="'width:' + attendanceBarWidth(row.rate)"></div></div>
+                              <span class="w-10 text-right font-semibold" x-text="formatPercent(row.rate)"></span>
+                            </div>
+                          </td>
+                          <td class="py-3 pr-4" x-text="row.counts.present"></td>
+                          <td class="py-3 pr-4" x-text="row.counts.late"></td>
+                          <td class="py-3 pr-4" x-text="row.counts.excused"></td>
+                          <td class="py-3" x-text="row.counts.absent"></td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="zao-card p-6">
+                <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h2 class="text-headline-md font-semibold text-primary">Tomar asistencia</h2>
+                    <p class="text-sm text-on-surface-variant">Marca presente, tarde, justificado o ausente por alumno.</p>
+                  </div>
+                  <div class="w-full sm:max-w-md">
+                    <label class="mb-1 block text-label-md">Fecha de clase</label>
+                    <select x-model="attendanceSessionId" @change="loadAttendance()" class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5">
+                      <option value="">— Elige una sesión —</option>
+                      <template x-for="s in sessions" :key="s.id">
+                        <option :value="s.id" x-text="formatSessionDateTime(s)"></option>
+                      </template>
+                    </select>
+                  </div>
+                </div>
+
+                <p x-show="sessions.length === 0" class="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface-variant">
+                  Primero crea fechas en la pestaña <strong>Horario</strong>.
+                </p>
+
+                <div x-show="sessions.length > 0 && students.length > 0" class="space-y-3">
+                  <template x-for="student in students" :key="student.id">
+                    <div class="flex flex-col gap-3 rounded-xl border border-outline-variant/40 bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container text-sm font-bold text-on-primary-container" x-text="studentInitials(student.full_name)"></div>
+                        <div>
+                          <p class="font-label-md" x-text="student.full_name"></p>
+                          <p class="text-label-sm text-on-surface-variant" x-text="student.student_id || student.email"></p>
+                        </div>
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                        <template x-for="st in attendanceStatuses" :key="st.value">
+                          <button
+                            type="button"
+                            @click="setAttendance(student.id, st.value)"
+                            :class="attendanceMap[student.id] === st.value ? 'bg-primary text-on-primary' : 'border border-outline-variant bg-surface-container-lowest text-on-surface-variant'"
+                            class="rounded-lg px-3 py-1.5 text-label-sm font-medium"
+                            x-text="st.label"
+                          ></button>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                  <div class="pt-4">
+                    <button type="button" @click="saveAttendance()" :disabled="saving || !attendanceSessionId" class="rounded-lg bg-primary px-6 py-3 font-label-md text-on-primary disabled:opacity-60">
+                      <span x-text="saving ? 'Guardando…' : 'Guardar asistencia'">Guardar asistencia</span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+              </div>
+
+              <!-- Actividades -->
+              <div x-show="tab === 'actividades'" class="space-y-6">
+              <section class="zao-card p-6" x-show="activities.length > 0">
+                <h2 class="mb-4 text-headline-md font-semibold text-primary">Promedio por alumno (todas las actividades)</h2>
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <template x-for="row in stats.gradesByStudent" :key="row.studentId">
+                    <div class="rounded-xl border border-outline-variant/40 p-4">
+                      <p class="font-label-md" x-text="row.fullName"></p>
+                      <p class="mt-1 text-headline-md font-bold text-primary" x-text="row.average !== null ? formatScore(row.average) + ' / 100' : 'Sin notas'"></p>
+                      <p class="mt-1 text-label-sm text-on-surface-variant" x-text="row.gradedCount + ' de ' + row.totalActivities + ' actividades calificadas'"></p>
+                      <div class="zao-stat-bar mt-2" x-show="row.average !== null">
+                        <div class="zao-stat-bar-fill" :class="gradeTone(row.average) === 'high' ? 'zao-stat-bar-fill--grade-high' : (gradeTone(row.average) === 'mid' ? 'zao-stat-bar-fill--grade-mid' : 'zao-stat-bar-fill--grade-low')" :style="'width:' + gradeBarWidth(row.average)"></div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </section>
+
+              <div class="grid gap-gutter lg:grid-cols-12">
+                <section class="zao-card p-6 lg:col-span-4">
+                  <h2 class="mb-4 text-headline-md font-semibold text-primary">Nueva actividad</h2>
+                  <form @submit.prevent="addActivity" class="space-y-4">
+                    <div>
+                      <label class="mb-1 block text-label-md">Título</label>
+                      <input type="text" x-model="activityForm.title" required class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5" />
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-label-md">Descripción (opcional)</label>
+                      <textarea x-model="activityForm.description" rows="2" class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5"></textarea>
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-label-md">Fecha de entrega</label>
+                      <input type="datetime-local" x-model="activityForm.dueAt" class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5" />
+                    </div>
+                    <label class="flex items-center gap-2 text-sm">
+                      <input type="checkbox" x-model="activityForm.allowOnlineSubmit" class="rounded border-outline-variant text-primary focus:ring-primary" />
+                      Permitir entrega en línea (enlace)
+                    </label>
+                    <button type="submit" :disabled="saving" class="w-full rounded-lg bg-secondary-container py-3 font-label-md text-on-secondary-container disabled:opacity-60">
+                      <span x-text="saving ? 'Guardando…' : 'Crear actividad'">Crear actividad</span>
+                    </button>
+                  </form>
+
+                  <h3 class="mb-2 mt-8 font-label-md text-primary">Actividades del curso</h3>
+                  <ul class="space-y-2">
+                    <template x-for="act in activities" :key="act.id">
+                      <li class="flex items-center justify-between gap-2 rounded-lg border border-outline-variant/40 px-3 py-2">
+                        <button type="button" @click="gradingActivityId = act.id" class="text-left text-sm font-medium hover:text-primary" x-text="act.title"></button>
+                        <button type="button" @click="removeActivity(act.id)" class="text-label-sm text-error">×</button>
+                      </li>
+                    </template>
+                  </ul>
+                </section>
+
+                <section class="zao-card p-6 lg:col-span-8">
+                  <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 class="text-headline-md font-semibold text-primary">Calificar (sobre 100)</h2>
+                    <select x-model="gradingActivityId" class="rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm">
+                      <template x-for="act in activities" :key="act.id">
+                        <option :value="act.id" x-text="act.title"></option>
+                      </template>
+                    </select>
+                  </div>
+
+                  <p x-show="activities.length === 0" class="text-sm text-on-surface-variant">Crea una actividad para registrar notas.</p>
+
+                  <template x-if="gradingActivity">
+                    <p class="mb-4 text-sm text-on-surface-variant">
+                      Entrega: <span x-text="formatDueDate(gradingActivity.due_at)"></span>
+                      <span x-show="gradingActivity.allow_online_submit" class="ml-2 rounded-full bg-surface-container-high px-2 py-0.5 text-label-sm">En línea</span>
+                    </p>
+                  </template>
+
+                  <div class="overflow-x-auto" x-show="activities.length > 0 && students.length > 0">
+                    <table class="w-full text-left text-sm">
+                      <thead>
+                        <tr class="border-b border-outline-variant text-label-sm text-on-surface-variant">
+                          <th class="py-2 pr-4">Alumno</th>
+                          <th class="py-2 pr-4">Entrega</th>
+                          <th class="py-2 text-right">Nota /100</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="student in students" :key="student.id">
+                          <tr class="border-b border-outline-variant/30">
+                            <td class="py-3 pr-4">
+                              <p class="font-medium" x-text="student.full_name"></p>
+                              <p class="text-label-sm text-on-surface-variant" x-show="averageForStudent(student.id) !== null">
+                                Promedio general: <span class="font-semibold text-primary" x-text="formatScore(averageForStudent(student.id)) + ' / 100'"></span>
+                              </p>
+                            </td>
+                            <td class="py-3 pr-4">
+                              <template x-if="submissionFor(gradingActivityId, student.id)">
+                                <a :href="submissionFor(gradingActivityId, student.id).submission_url" target="_blank" rel="noopener" class="text-primary hover:underline">Ver enlace</a>
+                              </template>
+                              <span x-show="!submissionFor(gradingActivityId, student.id)" class="text-on-surface-variant">—</span>
+                            </td>
+                            <td class="py-3 text-right">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.5"
+                                :value="gradeFor(gradingActivityId, student.id)"
+                                @change="saveGrade(student.id, $event.target.value)"
+                                class="w-20 rounded-lg border border-outline-variant px-2 py-1.5 text-center"
+                              />
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </div>
+              </div>
+
+              <!-- Estadísticas -->
+              <div x-show="tab === 'estadisticas'" class="space-y-6">
+                <div class="grid gap-gutter lg:grid-cols-2">
+                  <section class="zao-card p-6">
+                    <h2 class="mb-4 flex items-center gap-2 text-headline-md font-semibold text-primary">
+                      <span class="material-symbols-outlined">how_to_reg</span>
+                      Asistencia por alumno
+                    </h2>
+                    <p x-show="statsSummary.sessionsWithAttendance === 0" class="text-sm text-on-surface-variant">Aún no hay asistencia registrada.</p>
+                    <ul class="space-y-4" x-show="statsSummary.sessionsWithAttendance > 0">
+                      <template x-for="row in stats.attendanceByStudent" :key="row.studentId">
+                        <li>
+                          <div class="mb-1 flex justify-between text-sm">
+                            <span class="font-medium" x-text="row.fullName"></span>
+                            <span class="font-bold text-tertiary-container" x-text="formatPercent(row.rate)"></span>
+                          </div>
+                          <div class="zao-stat-bar"><div class="zao-stat-bar-fill zao-stat-bar-fill--attendance" :style="'width:' + attendanceBarWidth(row.rate)"></div></div>
+                          <p class="mt-1 text-label-sm text-on-surface-variant" x-text="'P:' + row.counts.present + ' · T:' + row.counts.late + ' · J:' + row.counts.excused + ' · A:' + row.counts.absent"></p>
+                        </li>
+                      </template>
+                    </ul>
+                  </section>
+
+                  <section class="zao-card p-6">
+                    <h2 class="mb-4 flex items-center gap-2 text-headline-md font-semibold text-primary">
+                      <span class="material-symbols-outlined">grade</span>
+                      Promedio por alumno
+                    </h2>
+                    <p x-show="activities.length === 0" class="text-sm text-on-surface-variant">No hay actividades creadas.</p>
+                    <ul class="space-y-4" x-show="activities.length > 0">
+                      <template x-for="row in stats.gradesByStudent" :key="row.studentId">
+                        <li>
+                          <div class="mb-1 flex justify-between text-sm">
+                            <span class="font-medium" x-text="row.fullName"></span>
+                            <span class="font-bold text-primary" x-text="row.average !== null ? formatScore(row.average) + ' / 100' : '—'"></span>
+                          </div>
+                          <div class="zao-stat-bar" x-show="row.average !== null">
+                            <div class="zao-stat-bar-fill" :class="gradeTone(row.average) === 'high' ? 'zao-stat-bar-fill--grade-high' : (gradeTone(row.average) === 'mid' ? 'zao-stat-bar-fill--grade-mid' : 'zao-stat-bar-fill--grade-low')" :style="'width:' + gradeBarWidth(row.average)"></div>
+                          </div>
+                          <p class="mt-1 text-label-sm text-on-surface-variant" x-text="row.gradedCount + '/' + row.totalActivities + ' actividades con nota'"></p>
+                        </li>
+                      </template>
+                    </ul>
+                  </section>
+                </div>
+
+                <section class="zao-card p-6">
+                  <h2 class="mb-4 flex items-center gap-2 text-headline-md font-semibold text-primary">
+                    <span class="material-symbols-outlined">assignment</span>
+                    Desempeño por actividad
+                  </h2>
+                  <p x-show="activities.length === 0" class="text-sm text-on-surface-variant">Crea actividades para ver estadísticas.</p>
+                  <div class="overflow-x-auto" x-show="activities.length > 0">
+                    <table class="w-full text-left text-sm">
+                      <thead>
+                        <tr class="border-b border-outline-variant text-label-sm text-on-surface-variant">
+                          <th class="py-2 pr-4">Actividad</th>
+                          <th class="py-2 pr-4 text-center">Promedio</th>
+                          <th class="py-2 pr-4 text-center">Mín</th>
+                          <th class="py-2 pr-4 text-center">Máx</th>
+                          <th class="py-2 pr-4 text-center">Notas</th>
+                          <th class="py-2 text-center">Entregas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="act in stats.activityStats" :key="act.activityId">
+                          <tr class="border-b border-outline-variant/30">
+                            <td class="py-3 pr-4 font-medium" x-text="act.title"></td>
+                            <td class="py-3 pr-4 text-center font-bold text-primary" x-text="act.average !== null ? formatScore(act.average) : '—'"></td>
+                            <td class="py-3 pr-4 text-center" x-text="act.min !== null ? formatScore(act.min) : '—'"></td>
+                            <td class="py-3 pr-4 text-center" x-text="act.max !== null ? formatScore(act.max) : '—'"></td>
+                            <td class="py-3 pr-4 text-center" x-text="act.gradedCount + '/' + act.totalStudents"></td>
+                            <td class="py-3 text-center" x-text="act.submissionCount + '/' + act.totalStudents"></td>
+                          </tr>
+                        </template>
+                      </tbody>
+                      <tfoot x-show="statsSummary.courseAverageOfStudentAverages !== null">
+                        <tr class="bg-surface-container-low font-semibold">
+                          <td class="py-3 pr-4">Promedio general del curso</td>
+                          <td class="py-3 pr-4 text-center text-primary" colspan="5" x-text="formatScore(statsSummary.courseAverageOfStudentAverages) + ' / 100 (promedio de promedios por alumno)'"></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </template>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="js/init-cuaderno-curso.js"></script>
+  </body>
+</html>

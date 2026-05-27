@@ -24,11 +24,12 @@ export const DEMO_USERS = {
     phone: 'prof123',
   },
   'estudiante@zao.edu': {
-    password: 'alum123',
+    password: '3001234567',
     role: ROLES.student,
     name: 'Alejandro Martínez',
-    phone: 'alum123',
+    phone: '3001234567',
     studentId: 'ZAO-2023-459',
+    needsProfileUpdate: true,
   },
 };
 

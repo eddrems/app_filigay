@@ -198,12 +198,12 @@ select public.zao_upsert_profile(
 -- ═══════════════════════════════════════════════════════════════
 select public.zao_seed_auth_user(
   'estudiante@zao.edu',
-  'alum123',
-  '{"role":"student","full_name":"Alejandro Martínez"}'::jsonb
+  '3001234567',
+  '{"role":"student","full_name":"Alejandro Martínez","phone":"3001234567","needs_profile_update":true}'::jsonb
 ) as auth_id_estudiante;
 
 select public.zao_upsert_profile(
-  'estudiante@zao.edu', 'Alejandro Martínez', 'alum123', 'student', 'ZAO-2023-459', false
+  'estudiante@zao.edu', 'Alejandro Martínez', '3001234567', 'student', 'ZAO-2023-459', true
 ) as perfil_estudiante;
 
 -- ═══════════════════════════════════════════════════════════════
