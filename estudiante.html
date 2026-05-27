@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal estudiante — Escuela ZAO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="css/zao.css" />
+  </head>
+  <body class="min-h-full bg-background antialiased" x-data="zaoLayout('student', ['admin', 'teacher', 'student'])">
+    <div x-show="loading" class="flex min-h-screen items-center justify-center text-on-surface-variant">Cargando portal…</div>
+
+    <div x-show="!loading && session">
+      <header class="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between bg-primary px-4 shadow-header md:px-8">
+        <button @click="toggleMobileNav" class="rounded-lg p-2 text-on-primary lg:hidden" type="button"><span class="material-symbols-outlined">menu</span></button>
+        <p class="font-label-md text-on-primary">Portal del estudiante</p>
+        <button @click="signOut" type="button" class="rounded-full p-2 text-on-primary hover:bg-primary-container"><span class="material-symbols-outlined">logout</span></button>
+      </header>
+
+      <div x-show="mobileNav" @click="mobileNav = false" class="fixed inset-0 z-40 bg-black/30 lg:hidden"></div>
+      <aside :class="mobileNav ? 'translate-x-0' : '-translate-x-full'" class="fixed left-0 top-20 z-40 h-[calc(100vh-5rem)] w-72 border-r border-outline-variant/50 bg-surface-container-lowest p-4 transition-transform lg:translate-x-0">
+        <nav class="flex flex-col gap-1">
+          <template x-for="item in navItems" :key="item.id">
+            <a :href="item.href" :class="isActive(item.id) ? 'nav-active' : ''" class="flex items-center gap-3 rounded-xl px-4 py-3 text-label-md text-on-surface-variant hover:bg-surface-container">
+              <span class="material-symbols-outlined" x-text="item.icon"></span>
+              <span x-text="item.label"></span>
+            </a>
+          </template>
+        </nav>
+      </aside>
+
+      <main class="lg:ml-72">
+        <div class="mx-auto max-w-container-max px-4 pb-16 pt-24 md:px-gutter">
+          <div class="mb-8">
+            <h1 class="text-headline-lg font-bold text-primary">Bienvenido, <span x-text="displayName"></span></h1>
+            <p class="mt-2 text-body-lg text-on-surface-variant">Resumen de tu progreso académico y actividades pendientes.</p>
+          </div>
+
+          <div class="grid grid-cols-1 gap-gutter lg:grid-cols-12">
+            <div class="flex flex-col gap-gutter lg:col-span-8">
+              <section class="zao-card relative overflow-hidden p-6">
+                <div class="flex flex-col gap-6 sm:flex-row sm:items-center">
+                  <div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary-container text-2xl font-bold text-on-primary-container" x-text="(session?.name || 'AZ').split(' ').map(n=>n[0]).join('').slice(0,2)"></div>
+                  <div>
+                    <h2 class="text-headline-md font-semibold text-on-surface" x-text="session?.name"></h2>
+                    <p class="mt-2 flex items-center gap-2 text-body-md text-on-surface-variant">
+                      <span class="material-symbols-outlined text-lg">badge</span>
+                      <span x-text="session?.studentId || 'ZAO-2023-459'"></span>
+                    </p>
+                    <p class="mt-1 flex items-center gap-2 text-body-md text-on-surface-variant">
+                      <span class="material-symbols-outlined text-lg">mail</span>
+                      <span x-text="session?.email"></span>
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <section class="glass-card zao-card p-6">
+                <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h3 class="text-headline-md font-semibold text-primary">Progreso del curso actual</h3>
+                    <p class="text-body-md text-on-surface-variant">Entendiendo a Dios — Módulo 3</p>
+                  </div>
+                  <span class="rounded-full border border-primary/20 bg-surface-container-high px-3 py-1 text-label-sm text-primary">En curso</span>
+                </div>
+                <div class="mb-6">
+                  <div class="mb-2 flex justify-between text-label-sm"><span>Progreso general</span><span class="font-bold text-primary">65%</span></div>
+                  <div class="h-2.5 w-full rounded-full bg-surface-container"><div class="h-2.5 w-[65%] rounded-full bg-primary"></div></div>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-body-md">
+                    <thead><tr class="border-b border-outline-variant/50"><th class="py-3 text-label-md text-primary">Actividad</th><th class="py-3 text-label-md text-primary">Fecha</th><th class="py-3 text-label-md text-primary">Estado</th><th class="py-3 text-right text-label-md text-primary">Nota</th></tr></thead>
+                    <tbody>
+                      <tr class="border-b border-outline-variant/30"><td class="py-3">Ensayo: Atributos divinos</td><td class="text-on-surface-variant">12 Oct</td><td><span class="zao-badge-success">Completado</span></td><td class="text-right font-bold text-primary">95</td></tr>
+                      <tr class="border-b border-outline-variant/30"><td class="py-3">Examen parcial 1</td><td class="text-on-surface-variant">20 Oct</td><td><span class="zao-badge-success">Completado</span></td><td class="text-right font-bold text-primary">88</td></tr>
+                      <tr><td class="py-3 font-medium">Foro: La Trinidad</td><td class="text-on-surface-variant">05 Nov</td><td><span class="zao-badge-pending">Pendiente</span></td><td class="text-right text-outline">—</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="zao-card p-6">
+                <h3 class="mb-6 text-headline-md font-semibold text-primary">Historial académico</h3>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="rounded-xl border border-outline-variant p-4 transition hover:shadow-card">
+                    <div class="flex justify-between"><h4 class="font-label-md">Fundamentos de la fe</h4><span class="material-symbols-outlined text-tertiary-container">check_circle</span></div>
+                    <p class="mt-2 text-sm text-on-surface-variant">Periodo 1 — 2024</p>
+                    <p class="mt-3 flex justify-between font-label-sm text-primary"><span>Calificación</span><span class="font-bold">98%</span></p>
+                  </div>
+                  <div class="rounded-xl border border-outline-variant p-4 transition hover:shadow-card">
+                    <div class="flex justify-between"><h4 class="font-label-md">Liderazgo espiritual</h4><span class="material-symbols-outlined text-tertiary-container">check_circle</span></div>
+                    <p class="mt-2 text-sm text-on-surface-variant">Periodo 2 — 2024</p>
+                    <p class="mt-3 flex justify-between font-label-sm text-primary"><span>Calificación</span><span class="font-bold">92%</span></p>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="flex flex-col gap-gutter lg:col-span-4">
+              <section class="relative overflow-hidden rounded-2xl bg-primary p-6 text-on-primary shadow-card">
+                <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary-container/50"></div>
+                <div class="relative z-10">
+                  <div class="mb-4 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-3xl text-secondary-container">how_to_reg</span>
+                    <h3 class="text-headline-md font-bold">Mi asistencia</h3>
+                  </div>
+                  <p class="mb-6 text-body-md opacity-90">Curso: <strong>Entendiendo a Dios</strong></p>
+                  <div class="mb-6 rounded-xl border border-on-primary/10 bg-primary-container p-4 text-center">
+                    <p class="text-label-sm uppercase opacity-80">Clase de hoy</p>
+                    <p class="text-headline-md font-bold">28 Octubre</p>
+                    <p class="mt-1 text-secondary-container">18:00 – 20:00</p>
+                  </div>
+                  <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary-container py-4 font-label-md font-bold text-on-secondary-container shadow-sm hover:brightness-105">
+                    <span class="material-symbols-outlined">fingerprint</span>
+                    Registrar asistencia
+                  </button>
+                </div>
+              </section>
+
+              <section class="zao-card p-6">
+                <div class="mb-6 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+                  <h3 class="text-headline-md font-semibold text-primary">Estado de cuenta</h3>
+                </div>
+                <div class="mb-6 rounded-xl bg-surface-container-high p-4">
+                  <p class="text-label-sm uppercase text-on-surface-variant">Saldo pendiente</p>
+                  <p class="text-headline-lg font-bold text-primary">$0.00</p>
+                  <p class="mt-1 flex items-center gap-1 text-sm text-tertiary-container"><span class="material-symbols-outlined text-sm">verified</span> Al día</p>
+                </div>
+                <ul class="space-y-3 text-body-md">
+                  <li class="flex items-center justify-between rounded-lg border border-outline-variant bg-surface p-3"><div><p class="font-label-md">Matrícula</p><p class="text-label-sm text-on-surface-variant">Pagado 01 Sep</p></div><span class="zao-badge-success">Pagado</span></li>
+                  <li class="flex items-center justify-between rounded-lg border border-outline-variant bg-surface p-3"><div><p class="font-label-md">Cuota 1</p><p class="text-label-sm text-on-surface-variant">Pagado 01 Oct</p></div><span class="zao-badge-success">Pagado</span></li>
+                  <li class="flex items-center justify-between rounded-lg border border-outline-variant bg-surface p-3 opacity-70"><div><p class="font-label-md">Cuota 2</p><p class="text-label-sm text-on-surface-variant">Vence 01 Nov</p></div><span class="font-label-md text-primary">$50.00</span></li>
+                </ul>
+              </section>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="js/layout.js"></script>
+  </body>
+</html>

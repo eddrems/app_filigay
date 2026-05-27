@@ -1,0 +1,11 @@
+-- Escuela ZAO — esquema completo
+--
+-- NO ejecutes este archivo si el editor no muestra tablas después de "Success".
+-- Usa estos dos archivos EN ORDEN:
+--
+--   1) supabase/01-schema-core.sql   ← tabla profiles + RLS
+--   2) supabase/02-auth-trigger.sql ← trigger al crear usuarios
+--
+-- Diagnóstico: supabase/verify.sql
+--
+-- En Table Editor: esquema "public", botón Refresh.

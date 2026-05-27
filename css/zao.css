@@ -1,0 +1,39 @@
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+[x-cloak] {
+  display: none !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.login-mesh {
+  background-color: #f8f9ff;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.12) 0, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(253, 196, 37, 0.15) 0, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(0, 74, 49, 0.08) 0, transparent 50%);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.nav-active {
+  background-color: #dce9ff;
+  color: #00236f;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 35, 111, 0.08);
+}

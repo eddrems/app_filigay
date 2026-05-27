@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acceso — Escuela ZAO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="css/zao.css" />
+  </head>
+  <body class="login-mesh relative flex min-h-full items-center justify-center overflow-hidden p-4 antialiased" x-data="loginPage">
+    <div class="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full bg-primary-container/20 blur-3xl"></div>
+    <div class="pointer-events-none absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-secondary-container/25 blur-3xl"></div>
+
+    <main class="relative z-10 w-full max-w-[480px] overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container-lowest shadow-card-hover">
+      <header class="flex flex-col items-center px-8 pb-6 pt-10 text-center">
+        <div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-md">
+          <span class="material-symbols-outlined filled text-3xl text-on-primary">school</span>
+        </div>
+        <h1 class="text-headline-lg font-bold text-primary">Escuela ZAO</h1>
+        <p class="mt-2 max-w-xs text-body-md text-on-surface-variant">Renovar mentes y transformar el mundo</p>
+      </header>
+
+      <form class="flex flex-col gap-4 px-8 pb-6" @submit.prevent="submit">
+        <p x-show="error" x-text="error" class="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm text-error"></p>
+        <p x-show="demoMode" class="rounded-lg border border-primary/20 bg-surface-container-low px-4 py-2 text-center text-label-sm text-on-surface-variant">
+          Modo demo — Supabase no configurado
+        </p>
+
+        <div>
+          <label class="mb-1.5 block text-label-md text-on-surface" for="email">Correo electrónico</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">mail</span>
+            <input id="email" type="email" x-model="email" required autocomplete="email" placeholder="correo@escuelazao.com" class="w-full rounded-lg border border-outline-variant bg-surface py-3 pl-12 pr-4 text-body-md text-on-surface transition placeholder:text-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-label-md text-on-surface" for="password">Contraseña (teléfono)</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">lock</span>
+            <input id="password" type="password" x-model="password" required minlength="4" autocomplete="current-password" placeholder="Tu número o clave" class="w-full rounded-lg border border-outline-variant bg-surface py-3 pl-12 pr-4 text-body-md text-on-surface transition placeholder:text-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
+        </div>
+
+        <button type="submit" :disabled="loading" class="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-secondary-container py-4 font-label-md text-on-secondary-container shadow-sm transition hover:brightness-105 active:scale-[0.98] disabled:opacity-60">
+          <span x-text="loading ? 'Ingresando…' : 'Ingresar a mi expediente'"></span>
+          <span class="material-symbols-outlined text-lg">arrow_forward</span>
+        </button>
+      </form>
+
+      <div class="border-t border-outline-variant/50 bg-surface-container-low p-6">
+        <div class="mb-4 flex items-center gap-2 text-outline">
+          <span class="material-symbols-outlined text-base">info</span>
+          <span class="text-label-sm uppercase tracking-wider">Credenciales de prueba</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <template x-for="account in demoAccounts" :key="account.email">
+            <button type="button" @click="fillCredentials(account.email, account.password)" class="flex flex-col items-center rounded-xl border border-outline-variant/40 bg-surface p-3 transition hover:border-primary hover:bg-surface-container hover:shadow-sm">
+              <span class="material-symbols-outlined mb-1 text-primary-container" x-text="account.icon"></span>
+              <span class="text-label-sm text-on-surface-variant" x-text="account.label"></span>
+            </button>
+          </template>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="js/login.js"></script>
+  </body>
+</html>

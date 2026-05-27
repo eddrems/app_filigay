@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Actualizar perfil — Escuela ZAO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="css/zao.css" />
+  </head>
+  <body class="login-mesh flex min-h-full items-center justify-center p-4" x-data="profileUpdatePage">
+    <main class="w-full max-w-lg rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-8 shadow-card-hover">
+      <div class="mb-8 text-center">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
+          <span class="material-symbols-outlined filled text-2xl text-on-primary">manage_accounts</span>
+        </div>
+        <h1 class="text-headline-md font-bold text-primary">Actualiza tu perfil</h1>
+        <p class="mt-2 text-body-md text-on-surface-variant">Por seguridad, confirma tu correo y teléfono antes de continuar.</p>
+      </div>
+
+      <form @submit.prevent="submit" class="space-y-5">
+        <p x-show="error" x-text="error" class="rounded-lg bg-error-container px-4 py-3 text-sm text-error"></p>
+        <p x-show="success" x-text="success" class="rounded-lg bg-tertiary-fixed/30 px-4 py-3 text-sm text-tertiary-container"></p>
+
+        <div>
+          <label class="mb-1.5 block text-label-md" for="email">Correo electrónico</label>
+          <input id="email" type="email" x-model="email" required class="w-full rounded-lg border border-outline-variant px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-label-md" for="phone">Teléfono (clave de acceso)</label>
+          <input id="phone" type="tel" x-model="phone" required class="w-full rounded-lg border border-outline-variant px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20" />
+        </div>
+
+        <button type="submit" :disabled="loading" class="w-full rounded-lg bg-secondary-container py-4 font-label-md text-on-secondary-container hover:brightness-105 disabled:opacity-60">
+          <span x-text="loading ? 'Guardando…' : 'Guardar y continuar'"></span>
+        </button>
+      </form>
+    </main>
+
+    <script type="module" src="js/profile-update.js"></script>
+  </body>
+</html>

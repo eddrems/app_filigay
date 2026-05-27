@@ -1,0 +1,17 @@
+# Configuración local con credenciales
+js/config.js
+
+# Dependencias y entorno
+node_modules/
+.env
+.env.local
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.idea/
+.vscode/
+*.swp
+*.swo
