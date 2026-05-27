@@ -3,7 +3,6 @@ import { isSupabaseConfigured } from './supabase.js';
 import { signIn } from './auth.js';
 import { loginDemo, getCurrentSession } from './session.js';
 import { routeForRole } from './roles.js';
-import { DEMO_USERS } from './roles.js';
 
 document.addEventListener('alpine:init', () => {
   Alpine.data('loginPage', () => ({
@@ -20,11 +19,6 @@ document.addEventListener('alpine:init', () => {
           existing.needsProfileUpdate ? 'actualizar-perfil.html' : routeForRole(existing.role),
         );
       }
-    },
-
-    fillCredentials(email, password) {
-      this.email = email;
-      this.password = password;
     },
 
     async submit() {
@@ -49,22 +43,6 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.loading = false;
       }
-    },
-
-    get demoAccounts() {
-      return Object.entries(DEMO_USERS).map(([email, data]) => ({
-        email,
-        password: data.password,
-        role: data.role,
-        label:
-          data.role === 'admin' ? 'Admin' : data.role === 'teacher' ? 'Docente' : 'Estudiante',
-        icon:
-          data.role === 'admin'
-            ? 'admin_panel_settings'
-            : data.role === 'teacher'
-              ? 'history_edu'
-              : 'person_book',
-      }));
     },
   }));
 });

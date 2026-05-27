@@ -25,11 +25,8 @@
         <p class="mt-2 max-w-xs text-body-md text-on-surface-variant">Renovar mentes y transformar el mundo</p>
       </header>
 
-      <form class="flex flex-col gap-4 px-8 pb-6" @submit.prevent="submit">
+      <form class="flex flex-col gap-4 px-8 pb-10" @submit.prevent="submit">
         <p x-show="error" x-text="error" class="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-sm text-error"></p>
-        <p x-show="demoMode" class="rounded-lg border border-primary/20 bg-surface-container-low px-4 py-2 text-center text-label-sm text-on-surface-variant">
-          Modo demo — Supabase no configurado
-        </p>
 
         <div>
           <label class="mb-1.5 block text-label-md text-on-surface" for="email">Correo electrónico</label>
@@ -52,21 +49,6 @@
           <span class="material-symbols-outlined text-lg">arrow_forward</span>
         </button>
       </form>
-
-      <div class="border-t border-outline-variant/50 bg-surface-container-low p-6">
-        <div class="mb-4 flex items-center gap-2 text-outline">
-          <span class="material-symbols-outlined text-base">info</span>
-          <span class="text-label-sm uppercase tracking-wider">Credenciales de prueba</span>
-        </div>
-        <div class="grid grid-cols-3 gap-3">
-          <template x-for="account in demoAccounts" :key="account.email">
-            <button type="button" @click="fillCredentials(account.email, account.password)" class="flex flex-col items-center rounded-xl border border-outline-variant/40 bg-surface p-3 transition hover:border-primary hover:bg-surface-container hover:shadow-sm">
-              <span class="material-symbols-outlined mb-1 text-primary-container" x-text="account.icon"></span>
-              <span class="text-label-sm text-on-surface-variant" x-text="account.label"></span>
-            </button>
-          </template>
-        </div>
-      </div>
     </main>
 
     <script type="module" src="js/init-index.js"></script>
