@@ -1,5 +1,5 @@
-# Configuración local con credenciales
-js/config.js
+# Overrides locales opcionales (no subir)
+# js/config.local.js
 
 # Dependencias y entorno
 node_modules/

@@ -6,7 +6,7 @@ import { DEMO_USERS, resolveRole } from './roles.js';
 const STORAGE_KEY = 'zao_demo_session';
 
 export function isDemoMode() {
-  return !isSupabaseConfigured() || !!getDemoSession();
+  return !isSupabaseConfigured();
 }
 
 export function getDemoSession() {
@@ -45,20 +45,23 @@ function mapSupabaseSession(user, profile) {
 }
 
 export async function getCurrentSession() {
+  if (isSupabaseConfigured()) {
+    const session = await getSession();
+    if (session) {
+      clearDemoSession();
+      try {
+        const profile = await fetchProfile(session.user.id);
+        return mapSupabaseSession(session.user, profile);
+      } catch {
+        return mapSupabaseSession(session.user, null);
+      }
+    }
+    return null;
+  }
+
   const demo = getDemoSession();
   if (demo) return { mode: 'demo', ...demo };
-
-  if (!isSupabaseConfigured()) return null;
-
-  const session = await getSession();
-  if (!session) return null;
-
-  try {
-    const profile = await fetchProfile(session.user.id);
-    return mapSupabaseSession(session.user, profile);
-  } catch {
-    return mapSupabaseSession(session.user, null);
-  }
+  return null;
 }
 
 export function loginDemo(email, password) {

@@ -1,0 +1,13 @@
+[build]
+  command = "node scripts/write-config.mjs"
+  publish = "."
+
+# Opcional: definir en Netlify → Site configuration → Environment variables
+# SUPABASE_URL = https://xxxx.supabase.co
+# SUPABASE_ANON_KEY = sb_publishable_... o eyJ...
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
