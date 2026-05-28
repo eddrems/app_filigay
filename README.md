@@ -1,4 +1,4 @@
-# Escuela ZAO — Filigay
+# Escuela ZAO — Fili
 
 Portal escolar con **HTML**, **Alpine.js**, **Tailwind CSS** (CDN) y **Supabase**.
 
